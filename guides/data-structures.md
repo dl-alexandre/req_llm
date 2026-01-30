@@ -169,18 +169,20 @@ Defines callable functions (aka "tools" or "function calling") with validation.
 **Typical fields**:
 - `name`: string
 - `description`: string
-- `schema`: `NimbleOptions`-based schema for argument validation
+- `parameter_schema`: `NimbleOptions`-based schema for argument validation
+- `callback`: function or MFA tuple to execute the tool
 
 **Example**:
 ```elixir
-tool = ReqLLM.Tool.new(
+{:ok, tool} = ReqLLM.Tool.new(
   name: "get_weather",
   description: "Gets weather by city",
-  schema: [city: [type: :string, required: true]]
+  parameter_schema: [city: [type: :string, required: true]],
+  callback: fn %{city: city} -> {:ok, "Weather in #{city}: sunny"} end
 )
 
 # Execute locally (e.g., after a model issues a tool_call)
-{:ok, result} = ReqLLM.Tool.execute(tool, %{city: "NYC"})
+{:ok, result} = ReqLLM.Tool.execute(tool, %{"city" => "NYC"})
 ```
 
 **How this supports normalization**:
@@ -324,10 +326,11 @@ alias ReqLLM.Message.ContentPart
 
 {:ok, model} = ReqLLM.Model.from("anthropic:claude-haiku-4-5")
 
-tool = ReqLLM.Tool.new(
+{:ok, tool} = ReqLLM.Tool.new(
   name: "get_weather",
   description: "Gets weather by city",
-  schema: [city: [type: :string, required: true]]
+  parameter_schema: [city: [type: :string, required: true]],
+  callback: fn %{city: city} -> {:ok, "Weather in #{city}: sunny"} end
 )
 
 context = ReqLLM.Context.new([

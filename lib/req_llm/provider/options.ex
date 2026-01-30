@@ -264,7 +264,14 @@ defmodule ReqLLM.Provider.Options do
       if provider_options == [] do
         translated_opts
       else
-        Keyword.put(translated_opts, :provider_options, provider_options)
+        translated_provider_opts =
+          Keyword.take(translated_opts, Keyword.keys(provider_options))
+
+        if translated_provider_opts == [] do
+          translated_opts
+        else
+          Keyword.put(translated_opts, :provider_options, translated_provider_opts)
+        end
       end
 
     final_opts = handle_warnings(final_opts, opts)

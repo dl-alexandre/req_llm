@@ -684,4 +684,63 @@ defmodule ReqLLM.Providers.XAITest do
                    end
     end
   end
+
+  describe "attachment MIME type validation" do
+    alias ReqLLM.Message.ContentPart
+
+    test "encode_body succeeds with image attachments" do
+      {:ok, model} = ReqLLM.model("xai:grok-3")
+
+      context =
+        Context.new([
+          Context.user([
+            ContentPart.text("What's in this image?"),
+            ContentPart.file("fake image data", "photo.png", "image/png")
+          ])
+        ])
+
+      mock_request = %Req.Request{
+        options: [
+          context: context,
+          model: model.model,
+          stream: false
+        ]
+      }
+
+      updated_request = XAI.encode_body(mock_request)
+      decoded = Jason.decode!(updated_request.body)
+
+      [user_msg] = decoded["messages"]
+      assert is_list(user_msg["content"])
+      assert Enum.any?(user_msg["content"], fn part -> part["type"] == "image_url" end)
+    end
+
+    test "encode_body raises error for PDF attachments" do
+      {:ok, model} = ReqLLM.model("xai:grok-3")
+
+      context =
+        Context.new([
+          Context.user([
+            ContentPart.text("Summarize this document"),
+            ContentPart.file("fake pdf data", "document.pdf", "application/pdf")
+          ])
+        ])
+
+      mock_request = %Req.Request{
+        options: [
+          context: context,
+          model: model.model,
+          stream: false
+        ]
+      }
+
+      error =
+        assert_raise ReqLLM.Error.Invalid.Capability, fn ->
+          XAI.encode_body(mock_request)
+        end
+
+      assert error.message =~ "only supports image attachments"
+      assert error.message =~ "application/pdf"
+    end
+  end
 end

@@ -1151,4 +1151,120 @@ defmodule ReqLLM.Providers.OpenAITest do
       assert Enum.any?(body["tools"], fn tool -> tool["type"] == "web_search" end)
     end
   end
+
+  describe "attachment MIME type validation" do
+    alias ReqLLM.Message.ContentPart
+
+    test "encode_body succeeds with image attachments" do
+      {:ok, model} = ReqLLM.model("openai:gpt-4o")
+
+      context =
+        Context.new([
+          Context.user([
+            ContentPart.text("What's in this image?"),
+            ContentPart.file("fake image data", "photo.jpg", "image/jpeg")
+          ])
+        ])
+
+      mock_request = %Req.Request{
+        options: [
+          context: context,
+          model: model.model,
+          stream: false
+        ]
+      }
+
+      updated_request = OpenAI.encode_body(mock_request)
+      decoded = Jason.decode!(updated_request.body)
+
+      [user_msg] = decoded["messages"]
+      assert is_list(user_msg["content"])
+      assert Enum.any?(user_msg["content"], fn part -> part["type"] == "image_url" end)
+    end
+
+    test "encode_body raises error for PDF attachments" do
+      {:ok, model} = ReqLLM.model("openai:gpt-4o")
+
+      context =
+        Context.new([
+          Context.user([
+            ContentPart.text("Summarize this document"),
+            ContentPart.file("fake pdf data", "document.pdf", "application/pdf")
+          ])
+        ])
+
+      mock_request = %Req.Request{
+        options: [
+          context: context,
+          model: model.model,
+          stream: false
+        ]
+      }
+
+      error =
+        assert_raise ReqLLM.Error.Invalid.Capability, fn ->
+          OpenAI.encode_body(mock_request)
+        end
+
+      assert error.message =~ "OpenAI Chat Completions API only supports image attachments"
+      assert error.message =~ "application/pdf"
+      assert error.message =~ "Anthropic"
+      assert error.message =~ "Google"
+    end
+
+    test "encode_body raises error for audio attachments" do
+      {:ok, model} = ReqLLM.model("openai:gpt-4o")
+
+      context =
+        Context.new([
+          Context.user([
+            ContentPart.text("Transcribe this audio"),
+            ContentPart.file("fake audio data", "recording.mp3", "audio/mpeg")
+          ])
+        ])
+
+      mock_request = %Req.Request{
+        options: [
+          context: context,
+          model: model.model,
+          stream: false
+        ]
+      }
+
+      error =
+        assert_raise ReqLLM.Error.Invalid.Capability, fn ->
+          OpenAI.encode_body(mock_request)
+        end
+
+      assert error.message =~ "only supports image attachments"
+      assert error.message =~ "audio/mpeg"
+    end
+
+    test "encode_body raises error for text file attachments" do
+      {:ok, model} = ReqLLM.model("openai:gpt-4o")
+
+      context =
+        Context.new([
+          Context.user([
+            ContentPart.text("Read this file"),
+            ContentPart.file("file contents", "data.txt", "text/plain")
+          ])
+        ])
+
+      mock_request = %Req.Request{
+        options: [
+          context: context,
+          model: model.model,
+          stream: false
+        ]
+      }
+
+      error =
+        assert_raise ReqLLM.Error.Invalid.Capability, fn ->
+          OpenAI.encode_body(mock_request)
+        end
+
+      assert error.message =~ "text/plain"
+    end
+  end
 end

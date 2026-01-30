@@ -154,6 +154,21 @@ response.usage.cost
 
 See the [Image Generation Guide](image-generation.md) for more details.
 
+## Attachment Limitations
+
+OpenAI Chat Completions API only supports **image attachments**. Attempting to use PDFs, audio, or other file types will return an error with guidance on alternative providers.
+
+Supported image formats:
+- JPEG, PNG, GIF, WebP
+- Maximum 20MB per image
+
+For document processing (PDFs, etc.), use:
+- **Anthropic** - Native PDF support
+- **Google** - Supports PDF, audio, video
+- **OpenRouter** - Route to Anthropic/Google models
+
+See the [Attachments Guide](attachments.md) for details.
+
 ## Resources
 
 - [OpenAI API Documentation](https://platform.openai.com/docs/api-reference)

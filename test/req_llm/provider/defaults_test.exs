@@ -742,4 +742,38 @@ defmodule ReqLLM.Provider.DefaultsTest do
       assert length(response.message.tool_calls) == 1
     end
   end
+
+  describe "image_mime_type?/1" do
+    test "returns true for standard image MIME types" do
+      assert Defaults.image_mime_type?("image/jpeg") == true
+      assert Defaults.image_mime_type?("image/jpg") == true
+      assert Defaults.image_mime_type?("image/png") == true
+      assert Defaults.image_mime_type?("image/gif") == true
+      assert Defaults.image_mime_type?("image/webp") == true
+    end
+
+    test "returns true for any image/* MIME type" do
+      assert Defaults.image_mime_type?("image/bmp") == true
+      assert Defaults.image_mime_type?("image/tiff") == true
+      assert Defaults.image_mime_type?("image/svg+xml") == true
+    end
+
+    test "is case-insensitive" do
+      assert Defaults.image_mime_type?("IMAGE/JPEG") == true
+      assert Defaults.image_mime_type?("Image/PNG") == true
+    end
+
+    test "returns false for non-image MIME types" do
+      assert Defaults.image_mime_type?("application/pdf") == false
+      assert Defaults.image_mime_type?("audio/mpeg") == false
+      assert Defaults.image_mime_type?("video/mp4") == false
+      assert Defaults.image_mime_type?("text/plain") == false
+      assert Defaults.image_mime_type?("application/octet-stream") == false
+    end
+
+    test "returns false for nil or non-binary input" do
+      assert Defaults.image_mime_type?(nil) == false
+      assert Defaults.image_mime_type?(123) == false
+    end
+  end
 end

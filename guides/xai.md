@@ -122,6 +122,20 @@ response.usage.cost
 
 xAI may report usage in different units (`"call"` or `"source"`) depending on the response format.
 
+## Attachment Limitations
+
+xAI uses an OpenAI-compatible API and only supports **image attachments**. Attempting to use PDFs, audio, or other file types will return an error with guidance on alternative providers.
+
+Supported image formats:
+- JPEG, PNG, GIF, WebP
+
+For document processing (PDFs, etc.), use:
+- **Anthropic** - Native PDF support
+- **Google** - Supports PDF, audio, video
+- **OpenRouter** - Route to Anthropic/Google models
+
+See the [Attachments Guide](attachments.md) for details.
+
 ## Resources
 
 - [xAI API Documentation](https://docs.x.ai/)

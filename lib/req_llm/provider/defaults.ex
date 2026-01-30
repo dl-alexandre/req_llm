@@ -710,18 +710,44 @@ defmodule ReqLLM.Provider.Defaults do
          media_type: media_type
        })
        when is_binary(data) do
-    # Encode file as image_url data URI (OpenAI format supports various media types this way)
-    base64 = Base.encode64(data)
+    if image_mime_type?(media_type) do
+      base64 = Base.encode64(data)
 
-    %{
-      type: "image_url",
-      image_url: %{
-        url: "data:#{media_type};base64,#{base64}"
+      %{
+        type: "image_url",
+        image_url: %{
+          url: "data:#{media_type};base64,#{base64}"
+        }
       }
-    }
+    else
+      raise ReqLLM.Error.Invalid.Capability.exception(
+              message:
+                "OpenAI Chat Completions API only supports image attachments (got: #{media_type}). " <>
+                  "For PDF, audio, and other file types, use Anthropic, Google, or OpenRouter with compatible models."
+            )
+    end
   end
 
   defp encode_openai_content_part(_), do: nil
+
+  @image_mime_types [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/gif",
+    "image/webp"
+  ]
+
+  @doc """
+  Checks if a MIME type is a supported image type for OpenAI Chat Completions API.
+  """
+  @spec image_mime_type?(String.t()) :: boolean()
+  def image_mime_type?(media_type) when is_binary(media_type) do
+    normalized = String.downcase(media_type)
+    normalized in @image_mime_types or String.starts_with?(normalized, "image/")
+  end
+
+  def image_mime_type?(_), do: false
 
   @passthrough_metadata_keys [:cache_control, "cache_control"]
 

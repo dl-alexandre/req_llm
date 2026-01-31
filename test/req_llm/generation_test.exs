@@ -321,4 +321,124 @@ defmodule ReqLLM.GenerationTest do
       assert %StreamResponse{} = response
     end
   end
+
+  describe "req_plugins option" do
+    test "generate_text/3 applies plugins to the request" do
+      test_pid = self()
+
+      Req.Test.stub(ReqLLM.GenerationTestPlugins, fn conn ->
+        custom_header = Plug.Conn.get_req_header(conn, "x-custom-header")
+        send(test_pid, {:custom_header, custom_header})
+
+        Req.Test.json(conn, %{
+          "id" => "cmpl_test_123",
+          "model" => "gpt-4o-mini-2024-07-18",
+          "choices" => [
+            %{
+              "message" => %{"role" => "assistant", "content" => "Hello!"}
+            }
+          ],
+          "usage" => %{"prompt_tokens" => 10, "completion_tokens" => 5, "total_tokens" => 15}
+        })
+      end)
+
+      add_header_plugin = fn req ->
+        Req.Request.put_header(req, "x-custom-header", "custom-value")
+      end
+
+      {:ok, response} =
+        Generation.generate_text(
+          "openai:gpt-4o-mini",
+          "Hello",
+          req_plugins: [add_header_plugin],
+          req_http_options: [plug: {Req.Test, ReqLLM.GenerationTestPlugins}]
+        )
+
+      assert %Response{} = response
+      assert_receive {:custom_header, ["custom-value"]}
+    end
+
+    test "generate_text/3 applies multiple plugins in order" do
+      test_pid = self()
+
+      Req.Test.stub(ReqLLM.GenerationTestPluginsOrder, fn conn ->
+        header1 = Plug.Conn.get_req_header(conn, "x-first-header")
+        header2 = Plug.Conn.get_req_header(conn, "x-second-header")
+        send(test_pid, {:headers, header1, header2})
+
+        Req.Test.json(conn, %{
+          "id" => "cmpl_test_123",
+          "model" => "gpt-4o-mini-2024-07-18",
+          "choices" => [
+            %{
+              "message" => %{"role" => "assistant", "content" => "Hello!"}
+            }
+          ],
+          "usage" => %{"prompt_tokens" => 10, "completion_tokens" => 5, "total_tokens" => 15}
+        })
+      end)
+
+      first_plugin = fn req ->
+        Req.Request.put_header(req, "x-first-header", "first-value")
+      end
+
+      second_plugin = fn req ->
+        Req.Request.put_header(req, "x-second-header", "second-value")
+      end
+
+      {:ok, _response} =
+        Generation.generate_text(
+          "openai:gpt-4o-mini",
+          "Hello",
+          req_plugins: [first_plugin, second_plugin],
+          req_http_options: [plug: {Req.Test, ReqLLM.GenerationTestPluginsOrder}]
+        )
+
+      assert_receive {:headers, ["first-value"], ["second-value"]}
+    end
+
+    test "generate_object/4 applies plugins to the request" do
+      test_pid = self()
+
+      Req.Test.stub(ReqLLM.GenerationTestObjectPlugins, fn conn ->
+        custom_header = Plug.Conn.get_req_header(conn, "x-object-header")
+        send(test_pid, {:object_header, custom_header})
+
+        Req.Test.json(conn, %{
+          "id" => "cmpl_test_123",
+          "model" => "gpt-4o-mini-2024-07-18",
+          "choices" => [
+            %{
+              "message" => %{
+                "role" => "assistant",
+                "content" => Jason.encode!(%{"name" => "Alice", "age" => 30})
+              }
+            }
+          ],
+          "usage" => %{"prompt_tokens" => 10, "completion_tokens" => 5, "total_tokens" => 15}
+        })
+      end)
+
+      add_header_plugin = fn req ->
+        Req.Request.put_header(req, "x-object-header", "object-value")
+      end
+
+      schema = [
+        name: [type: :string, required: true],
+        age: [type: :integer, required: true]
+      ]
+
+      {:ok, response} =
+        Generation.generate_object(
+          "openai:gpt-4o-mini",
+          "Generate a person",
+          schema,
+          req_plugins: [add_header_plugin],
+          req_http_options: [plug: {Req.Test, ReqLLM.GenerationTestObjectPlugins}]
+        )
+
+      assert %Response{} = response
+      assert_receive {:object_header, ["object-value"]}
+    end
+  end
 end

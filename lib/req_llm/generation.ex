@@ -51,6 +51,8 @@ defmodule ReqLLM.Generation do
     * `:tool_choice` - Tool choice strategy
     * `:system_prompt` - System prompt to prepend
     * `:provider_options` - Provider-specific options
+    * `:req_plugins` - List of functions to transform the `Req.Request` before execution.
+      Each function receives a `Req.Request` and returns a modified `Req.Request`.
 
   ## Examples
 
@@ -70,9 +72,12 @@ defmodule ReqLLM.Generation do
           keyword()
         ) :: {:ok, Response.t()} | {:error, term()}
   def generate_text(model_spec, messages, opts \\ []) do
+    {plugins, opts} = Keyword.pop(opts, :req_plugins, [])
+
     with {:ok, model} <- ReqLLM.model(model_spec),
          {:ok, provider_module} <- ReqLLM.provider(model.provider),
          {:ok, request} <- provider_module.prepare_request(:chat, model, messages, opts),
+         request = apply_plugins(request, plugins),
          {:ok, %Req.Response{status: status, body: decoded_response}} when status in 200..299 <-
            Req.request(request) do
       {:ok, decoded_response}
@@ -213,6 +218,8 @@ defmodule ReqLLM.Generation do
     * `:frequency_penalty` - Penalize new tokens based on frequency
     * `:system_prompt` - System prompt to prepend
     * `:provider_options` - Provider-specific options
+    * `:req_plugins` - List of functions to transform the `Req.Request` before execution.
+      Each function receives a `Req.Request` and returns a modified `Req.Request`.
 
   ## Examples
 
@@ -232,12 +239,15 @@ defmodule ReqLLM.Generation do
           keyword()
         ) :: {:ok, Response.t()} | {:error, term()}
   def generate_object(model_spec, messages, object_schema, opts \\ []) do
+    {plugins, opts} = Keyword.pop(opts, :req_plugins, [])
+
     with {:ok, model} <- ReqLLM.model(model_spec),
          {:ok, provider_module} <- ReqLLM.provider(model.provider),
          {:ok, compiled_schema} <- ReqLLM.Schema.compile(object_schema),
          opts_with_schema = Keyword.put(opts, :compiled_schema, compiled_schema),
          {:ok, request} <-
            provider_module.prepare_request(:object, model, messages, opts_with_schema),
+         request = apply_plugins(request, plugins),
          {:ok, %Req.Response{status: status, body: decoded_response}} when status in 200..299 <-
            Req.request(request) do
       # For models with json.strict = false, coerce response types to match schema
@@ -392,6 +402,10 @@ defmodule ReqLLM.Generation do
   end
 
   defp coerce_value(value, _type), do: value
+
+  defp apply_plugins(request, plugins) do
+    Enum.reduce(plugins, request, fn plugin, req -> plugin.(req) end)
+  end
 
   @doc """
   Streams structured data generation using an AI model with schema validation.

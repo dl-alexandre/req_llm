@@ -174,10 +174,13 @@ defmodule ReqLLM.Embedding do
   def embed(model_spec, input, opts \\ [])
 
   def embed(model_spec, text, opts) when is_binary(text) do
+    {plugins, opts} = Keyword.pop(opts, :req_plugins, [])
+
     with {:ok, model} <- validate_model(model_spec),
          :ok <- validate_input(text),
          {:ok, provider_module} <- ReqLLM.provider(model.provider),
          {:ok, request} <- provider_module.prepare_request(:embedding, model, text, opts),
+         request = apply_plugins(request, plugins),
          {:ok, %Req.Response{status: status, body: decoded_response}} when status in 200..299 <-
            Req.request(request) do
       extract_single_embedding(decoded_response)
@@ -196,10 +199,13 @@ defmodule ReqLLM.Embedding do
   end
 
   def embed(model_spec, texts, opts) when is_list(texts) do
+    {plugins, opts} = Keyword.pop(opts, :req_plugins, [])
+
     with {:ok, model} <- validate_model(model_spec),
          :ok <- validate_input(texts),
          {:ok, provider_module} <- ReqLLM.provider(model.provider),
          {:ok, request} <- provider_module.prepare_request(:embedding, model, texts, opts),
+         request = apply_plugins(request, plugins),
          {:ok, %Req.Response{status: status, body: decoded_response}} when status in 200..299 <-
            Req.request(request) do
       extract_multiple_embeddings(decoded_response)
@@ -215,6 +221,10 @@ defmodule ReqLLM.Embedding do
       {:error, error} ->
         {:error, error}
     end
+  end
+
+  defp apply_plugins(request, plugins) do
+    Enum.reduce(plugins, request, fn plugin, req -> plugin.(req) end)
   end
 
   defp validate_input("") do

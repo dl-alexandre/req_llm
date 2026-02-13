@@ -104,7 +104,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
 
       assert [encoded_tool] = body["tools"]
       assert encoded_tool["strict"] == false
-      refute Map.has_key?(encoded_tool["parameters"], "required")
+      assert encoded_tool["parameters"]["required"] == ["location"]
     end
 
     test "encodes strict tools with required field listing all parameters" do
@@ -128,6 +128,133 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       assert [encoded_tool] = body["tools"]
       assert encoded_tool["strict"] == true
       assert Enum.sort(encoded_tool["parameters"]["required"]) == ["location", "units"]
+    end
+
+    test "encodes raw map tool with nested function as strict by default" do
+      raw_tool = %{
+        "type" => "function",
+        "function" => %{
+          "name" => "search",
+          "description" => "Search the web",
+          "parameters" => %{
+            "type" => "object",
+            "properties" => %{
+              "query" => %{"type" => "string"},
+              "limit" => %{"type" => "integer"}
+            }
+          }
+        }
+      }
+
+      request = build_request(tools: [raw_tool])
+      encoded = ResponsesAPI.encode_body(request)
+      body = Jason.decode!(encoded.body)
+
+      assert [encoded_tool] = body["tools"]
+      assert encoded_tool["strict"] == true
+      assert encoded_tool["name"] == "search"
+      assert Enum.sort(encoded_tool["parameters"]["required"]) == ["limit", "query"]
+      assert encoded_tool["parameters"]["additionalProperties"] == false
+    end
+
+    test "encodes raw map tool with nested function and strict false" do
+      raw_tool = %{
+        "type" => "function",
+        "function" => %{
+          "name" => "search",
+          "description" => "Search the web",
+          "parameters" => %{
+            "type" => "object",
+            "properties" => %{
+              "query" => %{"type" => "string"},
+              "limit" => %{"type" => "integer"}
+            },
+            "required" => ["query"]
+          },
+          "strict" => false
+        }
+      }
+
+      request = build_request(tools: [raw_tool])
+      encoded = ResponsesAPI.encode_body(request)
+      body = Jason.decode!(encoded.body)
+
+      assert [encoded_tool] = body["tools"]
+      assert encoded_tool["strict"] == false
+      assert encoded_tool["parameters"]["required"] == ["query"]
+      refute Map.has_key?(encoded_tool["parameters"], "additionalProperties")
+    end
+
+    test "encodes raw map tool with top-level strict false" do
+      raw_tool = %{
+        "type" => "function",
+        "strict" => false,
+        "function" => %{
+          "name" => "lookup",
+          "description" => "Look up data",
+          "parameters" => %{
+            "type" => "object",
+            "properties" => %{
+              "id" => %{"type" => "string"}
+            }
+          }
+        }
+      }
+
+      request = build_request(tools: [raw_tool])
+      encoded = ResponsesAPI.encode_body(request)
+      body = Jason.decode!(encoded.body)
+
+      assert [encoded_tool] = body["tools"]
+      assert encoded_tool["strict"] == false
+      assert encoded_tool["name"] == "lookup"
+      refute Map.has_key?(encoded_tool["parameters"], "additionalProperties")
+    end
+
+    test "encodes raw flat map tool as strict by default" do
+      raw_tool = %{
+        "name" => "get_time",
+        "description" => "Get current time",
+        "parameters" => %{
+          "type" => "object",
+          "properties" => %{
+            "timezone" => %{"type" => "string"}
+          }
+        }
+      }
+
+      request = build_request(tools: [raw_tool])
+      encoded = ResponsesAPI.encode_body(request)
+      body = Jason.decode!(encoded.body)
+
+      assert [encoded_tool] = body["tools"]
+      assert encoded_tool["strict"] == true
+      assert encoded_tool["parameters"]["required"] == ["timezone"]
+      assert encoded_tool["parameters"]["additionalProperties"] == false
+    end
+
+    test "encodes raw flat map tool with strict false" do
+      raw_tool = %{
+        "name" => "get_time",
+        "description" => "Get current time",
+        "strict" => false,
+        "parameters" => %{
+          "type" => "object",
+          "properties" => %{
+            "timezone" => %{"type" => "string"}
+          },
+          "required" => ["timezone"]
+        }
+      }
+
+      request = build_request(tools: [raw_tool])
+      encoded = ResponsesAPI.encode_body(request)
+      body = Jason.decode!(encoded.body)
+
+      assert [encoded_tool] = body["tools"]
+      assert encoded_tool["strict"] == false
+      assert encoded_tool["parameters"]["required"] == ["timezone"]
+      refute Map.has_key?(encoded_tool["parameters"], "additionalProperties")
     end
 
     test "omits tools when empty list" do

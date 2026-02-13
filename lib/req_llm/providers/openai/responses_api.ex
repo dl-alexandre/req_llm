@@ -981,27 +981,41 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
         name = function_def["name"] || function_def[:name]
         description = function_def["description"] || function_def[:description]
         raw_params = function_def["parameters"] || function_def[:parameters]
-        params = normalize_parameters_for_strict(raw_params)
+        strict = get_strict_flag(tool_schema, function_def)
+
+        params =
+          if strict do
+            normalize_parameters_for_strict(raw_params)
+          else
+            normalize_parameters(raw_params)
+          end
 
         %{
           "type" => "function",
           "name" => name,
           "description" => description,
           "parameters" => params,
-          "strict" => true
+          "strict" => strict
         }
       else
         name = tool_schema["name"] || tool_schema[:name]
         description = tool_schema["description"] || tool_schema[:description]
         raw_params = tool_schema["parameters"] || tool_schema[:parameters]
-        params = normalize_parameters_for_strict(raw_params)
+        strict = get_strict_flag(tool_schema, nil)
+
+        params =
+          if strict do
+            normalize_parameters_for_strict(raw_params)
+          else
+            normalize_parameters(raw_params)
+          end
 
         %{
           "type" => "function",
           "name" => name,
           "description" => description,
           "parameters" => params,
-          "strict" => true
+          "strict" => strict
         }
       end
     end
@@ -1032,22 +1046,23 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
     }
   end
 
-  defp normalize_parameters(nil) do
-    %{
-      "type" => "object",
-      "properties" => %{},
-      "additionalProperties" => false
-    }
+  defp get_strict_flag(tool_schema, function_def) do
+    top_level = Map.get(tool_schema, "strict", Map.get(tool_schema, :strict))
+
+    nested =
+      if is_map(function_def),
+        do: Map.get(function_def, "strict", Map.get(function_def, :strict))
+
+    case top_level do
+      nil -> if nested == nil, do: true, else: nested
+      value -> value
+    end
   end
 
-  defp normalize_parameters(params) when is_map(params) do
-    properties = params[:properties] || params["properties"] || %{}
+  defp normalize_parameters(nil), do: %{"type" => "object", "properties" => %{}}
 
-    %{
-      "type" => "object",
-      "properties" => stringify_keys(properties),
-      "additionalProperties" => false
-    }
+  defp normalize_parameters(params) when is_map(params) do
+    stringify_keys(params)
   end
 
   defp stringify_keys(map) when is_map(map) do

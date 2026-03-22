@@ -186,15 +186,20 @@ defmodule Mix.Tasks.Test.Livebooks do
     end
   end
 
-  defp format_parse_error(file, {line, error, token}) when is_integer(line) do
-    "#{Path.relative_to_cwd(file)}:#{line}: #{inspect(error)} #{inspect(token)}"
-  end
+  defp format_parse_error(file, {location, error, token}) do
+    relative_file = Path.relative_to_cwd(file)
+    line = Keyword.get(location, :line)
+    column = Keyword.get(location, :column)
 
-  defp format_parse_error(file, {{line, column}, error, token}) do
-    "#{Path.relative_to_cwd(file)}:#{line}:#{column}: #{inspect(error)} #{inspect(token)}"
-  end
+    case {line, column} do
+      {line, column} when is_integer(line) and is_integer(column) ->
+        "#{relative_file}:#{line}:#{column}: #{inspect(error)} #{inspect(token)}"
 
-  defp format_parse_error(file, other) do
-    "#{Path.relative_to_cwd(file)}: #{inspect(other)}"
+      {line, _} when is_integer(line) ->
+        "#{relative_file}:#{line}: #{inspect(error)} #{inspect(token)}"
+
+      _ ->
+        "#{relative_file}: #{inspect(error)} #{inspect(token)}"
+    end
   end
 end

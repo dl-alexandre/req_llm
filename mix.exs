@@ -46,6 +46,8 @@ defmodule ReqLLM.MixProject do
           "guides/usage-and-billing.md",
           "guides/image-generation.md",
           "guides/model-metadata.md",
+          "guides/getting-started.livemd",
+          "guides/image-generation.livemd",
           "guides/mix-tasks.md",
           "guides/fixture-testing.md",
           "guides/adding_a_provider.md",
@@ -79,6 +81,10 @@ defmodule ReqLLM.MixProject do
             "guides/usage-and-billing.md",
             "guides/image-generation.md",
             "guides/model-metadata.md"
+          ],
+          Livebooks: [
+            "guides/getting-started.livemd",
+            "guides/image-generation.livemd"
           ],
           "Development & Testing": [
             "guides/mix-tasks.md",
@@ -243,7 +249,8 @@ defmodule ReqLLM.MixProject do
       q: ["quality"],
       docs: ["docs --formatter html"],
       mc: ["req_llm.model_compat"],
-      llm: ["req_llm.gen"]
+      llm: ["req_llm.gen"],
+      "test.livebooks": ["test.livebooks"]
     ]
   end
 end

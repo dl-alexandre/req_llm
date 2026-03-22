@@ -1,5 +1,7 @@
 # ReqLLM • Getting Started
 
+[![Run in Livebook](https://livebook.dev/badge/v1/blue.svg)](https://livebook.dev/run?url=https%3A%2F%2Fgithub.com%2Fagentjido%2Freq_llm%2Fblob%2Fmain%2Fguides%2Fgetting-started.livemd)
+
 ```elixir
 Mix.install([
   {:req_llm, github: "agentjido/req_llm"},

@@ -1,9 +1,11 @@
 defmodule Mix.Tasks.Test.Livebooks do
   @moduledoc """
-  Tests livebook files by extracting and executing Elixir code blocks.
+  Validates livebook files by extracting Elixir code blocks.
 
-  This task finds all `*.livemd` files in the guides directory, extracts
-  Elixir code blocks, and executes them to verify they run without errors.
+  By default this task parses each livebook's Elixir code blocks together to
+  verify they are syntactically valid and can be reviewed in ExDocs without
+  obviously broken examples. Use `--execute` to run the combined script when
+  a livebook is specifically written for non-interactive execution.
 
   ## Usage
 
@@ -13,6 +15,7 @@ defmodule Mix.Tasks.Test.Livebooks do
 
       --verbose    Print detailed output for each livebook
       --path       Specify custom path to search for livebooks (default: guides/)
+      --execute    Execute the combined script instead of syntax-checking it
 
   ## Exit Codes
 
@@ -21,37 +24,39 @@ defmodule Mix.Tasks.Test.Livebooks do
 
   ## Limitations
 
-  This task executes code blocks sequentially and does not support:
+  Execution mode does not support:
   - Kino UI interactions (inputs, outputs, frames)
   - Livebook-specific features like branching or smart cells
   - Code blocks marked with ` ```elixir#test:skip ` will be skipped
 
-  For interactive livebooks, manual testing in Livebook is still required.
+  Interactive livebooks should still be manually tested in Livebook.
   """
 
   use Mix.Task
 
-  @shortdoc "Test livebook files by executing Elixir code blocks"
+  @shortdoc "Validate livebook Elixir code blocks"
 
   @impl true
   def run(args) do
-    {opts, _, _} = OptionParser.parse(args, strict: [verbose: :boolean, path: :string])
+    {opts, _, _} =
+      OptionParser.parse(args, strict: [verbose: :boolean, path: :string, execute: :boolean])
 
     path = Keyword.get(opts, :path, "guides/")
     verbose = Keyword.get(opts, :verbose, false)
+    execute? = Keyword.get(opts, :execute, false)
 
     livebooks = find_livebooks(path)
 
     if livebooks == [] do
       Mix.shell().info("No livebooks found in #{path}")
-      exit(0)
+      :ok
     end
 
     Mix.shell().info("Testing #{length(livebooks)} livebook(s)...\n")
 
     results =
       Enum.map(livebooks, fn livebook ->
-        test_livebook(livebook, verbose)
+        test_livebook(livebook, verbose, execute?)
       end)
 
     passed = Enum.count(results, & &1.passed)
@@ -68,10 +73,10 @@ defmodule Mix.Tasks.Test.Livebooks do
         Mix.shell().error("  - #{r.file}: #{r.error}")
       end)
 
-      exit({:shutdown, 1})
+      Mix.raise("Livebook validation failed")
     else
       Mix.shell().info("\nAll livebooks passed!")
-      exit(0)
+      :ok
     end
   end
 
@@ -81,7 +86,7 @@ defmodule Mix.Tasks.Test.Livebooks do
     |> Enum.sort()
   end
 
-  defp test_livebook(file, verbose) do
+  defp test_livebook(file, verbose, execute?) do
     Mix.shell().info("Testing: #{file}")
 
     content = File.read!(file)
@@ -95,7 +100,7 @@ defmodule Mix.Tasks.Test.Livebooks do
       Mix.shell().info("  ⚠️  No Elixir code blocks found")
       %{file: file, passed: true, error: nil}
     else
-      execute_code_blocks(file, code_blocks, verbose)
+      check_code_blocks(file, code_blocks, verbose, execute?)
     end
   end
 
@@ -111,11 +116,34 @@ defmodule Mix.Tasks.Test.Livebooks do
       String.starts_with?(code, "#test:skip")
   end
 
-  defp execute_code_blocks(file, code_blocks, verbose) do
-    # Create a temporary script that combines all code blocks
+  defp check_code_blocks(file, code_blocks, verbose, execute?) do
     combined_code = Enum.join(code_blocks, "\n\n")
 
-    # Write to temp file
+    if execute? do
+      execute_code_blocks(file, combined_code, verbose)
+    else
+      validate_code_blocks(file, combined_code, verbose)
+    end
+  end
+
+  defp validate_code_blocks(file, combined_code, verbose) do
+    if verbose do
+      Mix.shell().info("  Validating combined script syntax...")
+    end
+
+    case Code.string_to_quoted(combined_code, file: file) do
+      {:ok, _quoted} ->
+        Mix.shell().info("  ✓ Passed")
+        %{file: file, passed: true, error: nil}
+
+      {:error, error_details} ->
+        message = format_parse_error(file, error_details)
+        Mix.shell().error("  ✗ Failed: #{message}")
+        %{file: file, passed: false, error: message}
+    end
+  end
+
+  defp execute_code_blocks(file, combined_code, verbose) do
     temp_file =
       Path.join(System.tmp_dir!(), "livebook_test_#{:erlang.unique_integer([:positive])}.exs")
 
@@ -128,13 +156,17 @@ defmodule Mix.Tasks.Test.Livebooks do
     # Execute with mix run
     result =
       try do
-        {output, exit_code} =
-          System.cmd("elixir", [temp_file], stderr_to_stdout: true, timeout: 30_000)
+        task = Task.async(fn -> System.cmd("elixir", [temp_file], stderr_to_stdout: true) end)
 
-        if exit_code == 0 do
-          {:ok, output}
-        else
-          {:error, "Exit code #{exit_code}: #{String.slice(output, 0, 200)}"}
+        case Task.yield(task, 30_000) || Task.shutdown(task, :brutal_kill) do
+          {:ok, {output, 0}} ->
+            {:ok, output}
+
+          {:ok, {output, exit_code}} ->
+            {:error, "Exit code #{exit_code}: #{String.slice(output, 0, 200)}"}
+
+          nil ->
+            {:error, "Execution timed out (30s)"}
         end
       catch
         :exit, {:timeout, _} ->
@@ -152,5 +184,17 @@ defmodule Mix.Tasks.Test.Livebooks do
         Mix.shell().error("  ✗ Failed: #{reason}")
         %{file: file, passed: false, error: reason}
     end
+  end
+
+  defp format_parse_error(file, {line, error, token}) when is_integer(line) do
+    "#{Path.relative_to_cwd(file)}:#{line}: #{inspect(error)} #{inspect(token)}"
+  end
+
+  defp format_parse_error(file, {{line, column}, error, token}) do
+    "#{Path.relative_to_cwd(file)}:#{line}:#{column}: #{inspect(error)} #{inspect(token)}"
+  end
+
+  defp format_parse_error(file, other) do
+    "#{Path.relative_to_cwd(file)}: #{inspect(other)}"
   end
 end

@@ -457,7 +457,7 @@ defmodule ReqLLM.Schema do
           properties =
             Map.new(opts, fn {prop_name, prop_opts} ->
               prop_type = Keyword.fetch!(prop_opts, :type)
-              {to_string(prop_name), nimble_type_to_json_schema(prop_type, [])}
+              {to_string(prop_name), nimble_type_to_json_schema(prop_type, prop_opts)}
             end)
 
           map_schema = %{

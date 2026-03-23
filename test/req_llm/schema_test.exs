@@ -80,6 +80,33 @@ defmodule ReqLLM.SchemaTest do
       assert result["properties"]["tags"]["items"]["required"] == ["title"]
     end
 
+    test "preserves doc option in nested map properties" do
+      result_schema =
+        {:map,
+         [
+           label: [type: :string, required: true, doc: "Canonical name"],
+           count: [type: :integer, doc: "Item count"]
+         ]}
+
+      schema = [
+        concepts: [
+          type: {:list, result_schema},
+          required: true,
+          doc: "List of concepts"
+        ]
+      ]
+
+      result = Schema.to_json(schema)
+
+      assert result["properties"]["concepts"]["description"] == "List of concepts"
+
+      assert result["properties"]["concepts"]["items"]["properties"]["label"]["description"] ==
+               "Canonical name"
+
+      assert result["properties"]["concepts"]["items"]["properties"]["count"]["description"] ==
+               "Item count"
+    end
+
     test "handles schema without required fields" do
       schema = [name: [type: :string, doc: "User name"], age: [type: :integer]]
 

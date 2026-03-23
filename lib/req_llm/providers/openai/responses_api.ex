@@ -1214,12 +1214,12 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
         {:ok, object}
 
       %{compiled: compiled} when not is_nil(compiled) ->
-        # Convert string keys to atoms for validation
+        # Convert string keys to atoms for validation (recursively for nested maps)
         keyword_data =
           object
           |> Enum.map(fn {k, v} ->
             key = if is_binary(k), do: String.to_existing_atom(k), else: k
-            {key, v}
+            {key, deep_atomize_keys(v)}
           end)
 
         case NimbleOptions.validate(keyword_data, compiled) do
@@ -1237,6 +1237,16 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
   end
 
   defp validate_object(object, nil), do: {:ok, object}
+
+  defp deep_atomize_keys(map) when is_map(map) do
+    Map.new(map, fn {k, v} ->
+      key = if is_binary(k), do: String.to_existing_atom(k), else: k
+      {key, deep_atomize_keys(v)}
+    end)
+  end
+
+  defp deep_atomize_keys(list) when is_list(list), do: Enum.map(list, &deep_atomize_keys/1)
+  defp deep_atomize_keys(value), do: value
 
   defp aggregate_output_segments(body, segments) do
     texts = [

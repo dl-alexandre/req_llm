@@ -703,6 +703,67 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       assert Enum.at(resp.body.context.messages, 0).role == :user
       assert Enum.at(resp.body.context.messages, 1).role == :assistant
     end
+
+    test "validates nested schemas with string keys converted to atoms" do
+      result_schema =
+        {:map,
+         [
+           id: [type: :pos_integer, required: true],
+           reasoning: [type: :string, required: true],
+           tags: [type: {:list, {:in, ~w[IT transport]}}, required: true]
+         ]}
+
+      schema = [
+        results: [type: {:list, result_schema}, required: true]
+      ]
+
+      {:ok, compiled_schema} = ReqLLM.Schema.compile(schema)
+
+      response_body = %{
+        "id" => "resp_123",
+        "model" => "gpt-5",
+        "output_text" =>
+          ~s({"results": [{"id": 1, "reasoning": "Transport job", "tags": ["transport"]}]}),
+        "usage" => %{"input_tokens" => 10, "output_tokens" => 20}
+      }
+
+      msg = %ReqLLM.Message{
+        role: :user,
+        content: [%ReqLLM.Message.ContentPart{type: :text, text: "Tag these jobs"}]
+      }
+
+      context = %ReqLLM.Context{messages: [msg]}
+
+      req = %Req.Request{
+        method: :post,
+        url: URI.parse("https://api.openai.com/v1/responses"),
+        headers: %{},
+        body: {:json, %{}},
+        options: %{
+          id: "gpt-5",
+          context: context,
+          operation: :object,
+          compiled_schema: compiled_schema
+        }
+      }
+
+      resp = %Req.Response{
+        status: 200,
+        headers: %{},
+        body: response_body
+      }
+
+      {_req, decoded_resp} = ResponsesAPI.decode_response({req, resp})
+
+      assert %ReqLLM.Response{} = decoded_resp.body
+      assert decoded_resp.body.object != nil
+
+      assert decoded_resp.body.object["results"] == [
+               %{"id" => 1, "reasoning" => "Transport job", "tags" => ["transport"]}
+             ]
+
+      assert decoded_resp.body.provider_meta[:object_parse_error] == nil
+    end
   end
 
   describe "decode_stream_event/2" do

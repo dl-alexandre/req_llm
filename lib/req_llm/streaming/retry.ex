@@ -88,7 +88,7 @@ defmodule ReqLLM.Streaming.Retry do
           attempt,
           state.callback_acc,
           reason,
-          state
+          state.headers
         )
 
       {:error, _reason, %{status: 429} = state} ->
@@ -107,7 +107,7 @@ defmodule ReqLLM.Streaming.Retry do
           attempt,
           callback_acc,
           reason,
-          state
+          state.headers
         )
 
       {:error, reason, %{callback_acc: callback_acc}} ->
@@ -126,9 +126,9 @@ defmodule ReqLLM.Streaming.Retry do
          attempt,
          callback_acc,
          reason,
-         state
+         headers
        ) do
-    case classify_error(reason, state) do
+    case classify_error(reason, headers) do
       {:retry, delay_ms} ->
         log_retry(reason, attempt + 1, max_retries, delay_ms)
 
@@ -157,8 +157,8 @@ defmodule ReqLLM.Streaming.Retry do
   end
 
   defp apply_callback({:status, status}, %{callback_acc: callback_acc} = wrapped_acc, callback) do
-    new_acc = callback.({:status, status}, callback_acc)
-    %{wrapped_acc | callback_acc: new_acc, status: status}
+    callback.({:status, status}, callback_acc)
+    %{wrapped_acc | status: status}
   end
 
   defp apply_callback({:headers, headers}, %{status: 429} = wrapped_acc, _callback) do
@@ -166,8 +166,8 @@ defmodule ReqLLM.Streaming.Retry do
   end
 
   defp apply_callback({:headers, headers}, %{callback_acc: callback_acc} = wrapped_acc, callback) do
-    new_acc = callback.({:headers, headers}, callback_acc)
-    %{wrapped_acc | callback_acc: new_acc, headers: headers}
+    callback.({:headers, headers}, callback_acc)
+    %{wrapped_acc | headers: headers}
   end
 
   defp apply_callback(
@@ -190,21 +190,37 @@ defmodule ReqLLM.Streaming.Retry do
     %{wrapped_acc | callback_acc: callback.(event, callback_acc)}
   end
 
-  defp classify_error(%Mint.TransportError{reason: reason}, _state)
+  defp classify_error(%Mint.TransportError{reason: reason}, _headers)
        when reason in @retryable_reasons,
        do: {:retry, 0}
 
-  defp classify_error(%Req.TransportError{reason: reason}, _state)
+  defp classify_error(%Req.TransportError{reason: reason}, _headers)
        when reason in @retryable_reasons,
        do: {:retry, 0}
 
-  defp classify_error(_reason, %{status: 429} = state) do
-    {:retry, extract_retry_after_delay(state.headers)}
+  defp classify_error(_reason, headers) do
+    case get_status_from_headers(headers) do
+      429 -> {:retry, extract_retry_after_delay(headers)}
+      _ -> :no_retry
+    end
   end
 
-  defp classify_error(_reason, _state) do
-    :no_retry
+  defp get_status_from_headers(headers) do
+    Enum.find_value(headers, fn
+      {":status", value} -> parse_status(value)
+      _ -> nil
+    end)
   end
+
+  defp parse_status(value) when is_binary(value) do
+    case Integer.parse(value) do
+      {status, _} -> status
+      :error -> nil
+    end
+  end
+
+  defp parse_status(value) when is_integer(value), do: value
+  defp parse_status(_), do: nil
 
   defp extract_retry_after_delay(headers) when is_list(headers) do
     retry_after =

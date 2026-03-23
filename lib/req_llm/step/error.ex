@@ -73,7 +73,8 @@ defmodule ReqLLM.Step.Error do
       status: response.status,
       response_body: response.body,
       request_body: request.body,
-      cause: nil
+      cause: nil,
+      headers: response.headers
     )
   end
 

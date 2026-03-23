@@ -520,7 +520,8 @@ defmodule ReqLLM.Providers.Anthropic do
     headers = build_request_headers(model, translated_opts)
     streaming_headers = [{"Accept", "text/event-stream"} | headers]
     beta_headers = build_beta_headers(translated_opts)
-    all_headers = streaming_headers ++ beta_headers
+    custom_headers = ReqLLM.Provider.Utils.extract_custom_headers(opts[:req_http_options])
+    all_headers = streaming_headers ++ beta_headers ++ custom_headers
 
     operation = opts[:operation] || :chat
 

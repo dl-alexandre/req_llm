@@ -744,8 +744,9 @@ defmodule ReqLLM.Provider.Defaults do
     path = Map.fetch!(stream_config, :path)
     base_headers = Map.fetch!(stream_config, :headers)
 
-    # Merge headers from streaming config
-    headers = base_headers ++ [{"Accept", "text/event-stream"}]
+    # Merge headers from streaming config and add custom headers from req_http_options
+    custom_headers = ReqLLM.Provider.Utils.extract_custom_headers(opts[:req_http_options])
+    headers = base_headers ++ [{"Accept", "text/event-stream"}] ++ custom_headers
 
     # Build URL
     method = :post

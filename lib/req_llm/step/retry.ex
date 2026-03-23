@@ -99,5 +99,49 @@ defmodule ReqLLM.Step.Retry do
     {:delay, 0}
   end
 
+  def should_retry?(_request, %Req.Response{status: 429} = response) do
+    retry_after = extract_retry_after_delay(response.headers)
+    {:delay, retry_after}
+  end
+
+  def should_retry?(_request, %ReqLLM.Error.API.Request{status: 429, headers: headers}) do
+    retry_after = extract_retry_after_delay(headers)
+    {:delay, retry_after}
+  end
+
   def should_retry?(_request, _response_or_exception), do: false
+
+  defp extract_retry_after_delay(headers) when is_list(headers) do
+    retry_after =
+      Enum.find_value(headers, fn
+        {name, value} when is_binary(name) ->
+          if String.downcase(name) == "retry-after" do
+            if is_list(value), do: List.first(value), else: value
+          else
+            nil
+          end
+
+        _ ->
+          nil
+      end)
+
+    case retry_after do
+      nil ->
+        1000
+
+      value when is_binary(value) ->
+        case Integer.parse(value) do
+          {seconds, _} -> seconds * 1000
+          :error -> 1000
+        end
+
+      value when is_integer(value) and value > 0 ->
+        value * 1000
+
+      _ ->
+        1000
+    end
+  end
+
+  defp extract_retry_after_delay(_), do: 1000
 end

@@ -130,7 +130,9 @@ defmodule ReqLLM.Providers.OpenAI.ChatAPI do
 
   @impl true
   def attach_stream(model, context, opts, _finch_name) do
-    headers = build_request_headers(model, opts) ++ [{"Accept", "text/event-stream"}]
+    base_headers = build_request_headers(model, opts) ++ [{"Accept", "text/event-stream"}]
+    custom_headers = ReqLLM.Provider.Utils.extract_custom_headers(opts[:req_http_options])
+    headers = base_headers ++ custom_headers
 
     base_url = ReqLLM.Provider.Options.effective_base_url(ReqLLM.Providers.OpenAI, model, opts)
 

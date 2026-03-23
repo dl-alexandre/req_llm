@@ -618,7 +618,7 @@ defmodule ReqLLM.StreamServer do
 
   defp process_http_event({:data, chunk}, state) do
     if state.http_status && state.http_status >= 400 do
-      error = build_http_error(state.http_status, chunk)
+      error = build_http_error(state.http_status, chunk, state.headers)
 
       new_state =
         state
@@ -1080,7 +1080,7 @@ defmodule ReqLLM.StreamServer do
     %{state | completion_cleanup_timer: nil, completion_cleanup_token: nil}
   end
 
-  defp build_http_error(status, chunk) do
+  defp build_http_error(status, chunk, headers) do
     case Jason.decode(chunk) do
       {:ok, %{"error" => error_data}} when is_map(error_data) ->
         message = Map.get(error_data, "message", "HTTP #{status}")
@@ -1088,21 +1088,24 @@ defmodule ReqLLM.StreamServer do
         ReqLLM.Error.API.Request.exception(
           reason: message,
           status: status,
-          response_body: error_data
+          response_body: error_data,
+          headers: headers
         )
 
       {:ok, decoded} ->
         ReqLLM.Error.API.Request.exception(
           reason: "HTTP #{status}",
           status: status,
-          response_body: decoded
+          response_body: decoded,
+          headers: headers
         )
 
       {:error, _} ->
         ReqLLM.Error.API.Request.exception(
           reason: "HTTP #{status}",
           status: status,
-          response_body: chunk
+          response_body: chunk,
+          headers: headers
         )
     end
   end

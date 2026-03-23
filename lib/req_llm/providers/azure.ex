@@ -692,7 +692,8 @@ defmodule ReqLLM.Providers.Azure do
     ]
 
     extra_headers = get_anthropic_headers(model_id, translated_opts)
-    headers = base_headers ++ extra_headers
+    custom_headers = ReqLLM.Provider.Utils.extract_custom_headers(opts[:req_http_options])
+    headers = base_headers ++ extra_headers ++ custom_headers
 
     body =
       formatter.format_request(

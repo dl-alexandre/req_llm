@@ -212,4 +212,42 @@ defmodule ReqLLM.Provider.Utils do
   end
 
   def sanitize_url(url), do: url
+
+  @doc """
+  Extracts custom headers from req_http_options for use in streaming requests.
+
+  The req_http_options keyword list may contain a :headers key with a list of
+  header tuples. This function extracts those headers for use when building
+  Finch requests for streaming.
+
+  ## Parameters
+
+  - `req_http_options` - Keyword list of HTTP options (may contain :headers)
+
+  ## Returns
+
+  List of header tuples {name, value} to be added to the request.
+
+  ## Examples
+
+      iex> ReqLLM.Provider.Utils.extract_custom_headers([])
+      []
+
+      iex> ReqLLM.Provider.Utils.extract_custom_headers(headers: [{"X-Custom", "value"}])
+      [{"X-Custom", "value"}]
+
+      iex> ReqLLM.Provider.Utils.extract_custom_headers(headers: [{"X-Custom", "value"}], timeout: 5000)
+      [{"X-Custom", "value"}]
+  """
+  @spec extract_custom_headers(keyword() | nil) :: [{binary(), binary()}]
+  def extract_custom_headers(nil), do: []
+
+  def extract_custom_headers(req_http_options) when is_list(req_http_options) do
+    case Keyword.get(req_http_options, :headers) do
+      headers when is_list(headers) -> headers
+      _ -> []
+    end
+  end
+
+  def extract_custom_headers(_), do: []
 end

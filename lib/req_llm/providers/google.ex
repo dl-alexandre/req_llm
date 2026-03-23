@@ -1790,7 +1790,9 @@ defmodule ReqLLM.Providers.Google do
       base_headers =
         build_request_headers(model, opts_with_base) ++ [{"Accept", "text/event-stream"}]
 
-      headers = maybe_add_auth_header(base_headers, opts_with_base)
+      headers_with_auth = maybe_add_auth_header(base_headers, opts_with_base)
+      custom_headers = ReqLLM.Provider.Utils.extract_custom_headers(opts[:req_http_options])
+      headers = headers_with_auth ++ custom_headers
       url = build_request_url(model.id, opts_with_base)
       body = build_request_body(model, context, processed_opts)
 

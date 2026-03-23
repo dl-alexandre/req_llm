@@ -210,7 +210,8 @@ defmodule ReqLLM.OAuth do
       needs_refresh?(credentials) ->
         refresh_opts = oauth_refresh_opts(opts, provider_opts)
 
-        with {:ok, refreshed} <- provider_mod.refresh_oauth_credentials(credentials, refresh_opts),
+        with {:ok, refreshed} <-
+               provider_mod.refresh_oauth_credentials(credentials, refresh_opts),
              {:ok, normalized} <- normalize_credentials(refreshed, provider_key, oauth_file),
              :ok <- persist_credentials(payload, oauth_file, provider_key, normalized) do
           {:ok, normalized, :oauth_refresh}

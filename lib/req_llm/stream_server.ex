@@ -440,6 +440,15 @@ defmodule ReqLLM.StreamServer do
             get_in(canonical_json, ["generationConfig", "responseMimeType"]) ==
               "application/json"
 
+        # Set fixture context atomically with HTTP start to avoid race conditions
+        # In record mode, this ensures fixture metadata is ready before any events arrive
+        fixture_path =
+          if fixture_mode() == :record and state.fixture_path do
+            state.fixture_path
+          else
+            nil
+          end
+
         new_state = %{
           state
           | http_task: task_pid,
@@ -447,7 +456,8 @@ defmodule ReqLLM.StreamServer do
             http_context: http_context,
             canonical_json: canonical_json,
             object_json_mode?: json_mode?,
-            object_acc: []
+            object_acc: [],
+            fixture_path: fixture_path
         }
 
         {:reply, {:ok, task_pid, http_context, canonical_json}, new_state}
@@ -1168,4 +1178,11 @@ defmodule ReqLLM.StreamServer do
   defp normalize_telemetry_stream_finish_reason("cancelled"), do: :cancelled
   defp normalize_telemetry_stream_finish_reason("incomplete"), do: :incomplete
   defp normalize_telemetry_stream_finish_reason(finish_reason), do: finish_reason
+
+  defp fixture_mode do
+    case Code.ensure_loaded(ReqLLM.Test.Fixtures) do
+      {:module, mod} -> mod.mode()
+      {:error, _} -> :replay
+    end
+  end
 end

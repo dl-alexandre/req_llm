@@ -239,11 +239,18 @@ defmodule ReqLLM.Provider.Utils do
       iex> ReqLLM.Provider.Utils.extract_custom_headers(headers: [{"X-Custom", "value"}], timeout: 5000)
       [{"X-Custom", "value"}]
   """
-  @spec extract_custom_headers(keyword() | nil) :: [{binary(), binary()}]
+  @spec extract_custom_headers(keyword() | map() | nil) :: [{binary(), binary()}]
   def extract_custom_headers(nil), do: []
 
   def extract_custom_headers(req_http_options) when is_list(req_http_options) do
     case Keyword.get(req_http_options, :headers) do
+      headers when is_list(headers) -> headers
+      _ -> []
+    end
+  end
+
+  def extract_custom_headers(req_http_options) when is_map(req_http_options) do
+    case Map.get(req_http_options, :headers) || Map.get(req_http_options, "headers") do
       headers when is_list(headers) -> headers
       _ -> []
     end

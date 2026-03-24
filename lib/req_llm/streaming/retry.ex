@@ -44,12 +44,55 @@ defmodule ReqLLM.Streaming.Retry do
          max_retries,
          attempt
        ) do
-    initial_acc = %{callback_acc: acc, data_received?: false, status: nil, headers: []}
+    initial_acc = %{
+      callback_acc: acc,
+      data_received?: false,
+      status: nil,
+      headers: [],
+      error_body: []
+    }
+
     wrapped_callback = fn event, wrapped_acc -> apply_callback(event, wrapped_acc, callback) end
 
     case stream_fun.(request, finch_name, initial_acc, wrapped_callback, stream_opts) do
+      {:ok, %{status: 429} = state} when attempt < max_retries ->
+        maybe_retry(
+          request,
+          finch_name,
+          acc,
+          callback,
+          stream_opts,
+          stream_fun,
+          max_retries,
+          attempt,
+          state.callback_acc,
+          :rate_limited,
+          state
+        )
+
+      {:ok, %{status: 429} = state} ->
+        deliver_rate_limit_failure(state, callback)
+
       {:ok, %{callback_acc: callback_acc}} ->
         {:ok, callback_acc}
+
+      {:error, reason, %{status: 429} = state} when attempt < max_retries ->
+        maybe_retry(
+          request,
+          finch_name,
+          acc,
+          callback,
+          stream_opts,
+          stream_fun,
+          max_retries,
+          attempt,
+          state.callback_acc,
+          reason,
+          state
+        )
+
+      {:error, _reason, %{status: 429} = state} ->
+        deliver_rate_limit_failure(state, callback)
 
       {:error, reason, %{data_received?: false, callback_acc: callback_acc} = state}
       when attempt < max_retries ->
@@ -109,9 +152,17 @@ defmodule ReqLLM.Streaming.Retry do
     end
   end
 
+  defp apply_callback({:status, 429}, wrapped_acc, _callback) do
+    %{wrapped_acc | status: 429}
+  end
+
   defp apply_callback({:status, status}, %{callback_acc: callback_acc} = wrapped_acc, callback) do
     new_acc = callback.({:status, status}, callback_acc)
     %{wrapped_acc | callback_acc: new_acc, status: status}
+  end
+
+  defp apply_callback({:headers, headers}, %{status: 429} = wrapped_acc, _callback) do
+    %{wrapped_acc | headers: headers}
   end
 
   defp apply_callback({:headers, headers}, %{callback_acc: callback_acc} = wrapped_acc, callback) do
@@ -119,8 +170,20 @@ defmodule ReqLLM.Streaming.Retry do
     %{wrapped_acc | callback_acc: new_acc, headers: headers}
   end
 
+  defp apply_callback(
+         {:data, chunk},
+         %{status: 429, error_body: error_body} = wrapped_acc,
+         _callback
+       ) do
+    %{wrapped_acc | error_body: [chunk | error_body]}
+  end
+
   defp apply_callback({:data, _} = event, %{callback_acc: callback_acc} = wrapped_acc, callback) do
     %{wrapped_acc | callback_acc: callback.(event, callback_acc), data_received?: true}
+  end
+
+  defp apply_callback(:done, %{status: 429} = wrapped_acc, _callback) do
+    wrapped_acc
   end
 
   defp apply_callback(event, %{callback_acc: callback_acc} = wrapped_acc, callback) do
@@ -178,6 +241,58 @@ defmodule ReqLLM.Streaming.Retry do
   end
 
   defp extract_retry_after_delay(_), do: 1000
+
+  defp deliver_rate_limit_failure(state, callback) do
+    callback_acc =
+      state.callback_acc
+      |> maybe_emit_status(callback, state.status)
+      |> maybe_emit_headers(callback, state.headers)
+
+    {:error, build_rate_limit_error(state), callback_acc}
+  end
+
+  defp maybe_emit_status(callback_acc, _callback, nil), do: callback_acc
+
+  defp maybe_emit_status(callback_acc, callback, status),
+    do: callback.({:status, status}, callback_acc)
+
+  defp maybe_emit_headers(callback_acc, _callback, []), do: callback_acc
+
+  defp maybe_emit_headers(callback_acc, callback, headers) do
+    callback.({:headers, headers}, callback_acc)
+  end
+
+  defp build_rate_limit_error(state) do
+    response_body =
+      state.error_body
+      |> Enum.reverse()
+      |> IO.iodata_to_binary()
+      |> decode_rate_limit_body()
+
+    reason =
+      case response_body do
+        %{"error" => %{"message" => message}} when is_binary(message) and message != "" -> message
+        %{"message" => message} when is_binary(message) and message != "" -> message
+        body when is_binary(body) and body != "" -> body
+        _ -> "HTTP 429"
+      end
+
+    ReqLLM.Error.API.Request.exception(
+      reason: reason,
+      status: 429,
+      response_body: response_body,
+      headers: state.headers
+    )
+  end
+
+  defp decode_rate_limit_body(""), do: ""
+
+  defp decode_rate_limit_body(body) when is_binary(body) do
+    case Jason.decode(body) do
+      {:ok, decoded} -> decoded
+      {:error, _} -> body
+    end
+  end
 
   defp log_retry(reason, attempt, max_retries, delay_ms) do
     if delay_ms > 0 do

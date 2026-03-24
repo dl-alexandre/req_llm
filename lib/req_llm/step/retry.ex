@@ -143,5 +143,34 @@ defmodule ReqLLM.Step.Retry do
     end
   end
 
+  defp extract_retry_after_delay(headers) when is_map(headers) do
+    retry_after =
+      Enum.find_value(headers, fn
+        {name, value} ->
+          if String.downcase(to_string(name)) == "retry-after" do
+            if is_list(value), do: List.first(value), else: value
+          else
+            nil
+          end
+      end)
+
+    case retry_after do
+      nil ->
+        1000
+
+      value when is_binary(value) ->
+        case Integer.parse(value) do
+          {seconds, _} -> seconds * 1000
+          :error -> 1000
+        end
+
+      value when is_integer(value) and value > 0 ->
+        value * 1000
+
+      _ ->
+        1000
+    end
+  end
+
   defp extract_retry_after_delay(_), do: 1000
 end

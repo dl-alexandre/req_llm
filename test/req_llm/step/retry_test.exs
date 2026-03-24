@@ -60,6 +60,20 @@ defmodule ReqLLM.Step.RetryTest do
       assert Retry.should_retry?(request, response) == false
     end
 
+    test "returns retry-after delay for 429 responses with list headers" do
+      request = Req.new()
+      response = %Req.Response{status: 429, headers: [{"retry-after", "2"}]}
+
+      assert Retry.should_retry?(request, response) == {:delay, 2_000}
+    end
+
+    test "returns retry-after delay for 429 responses with map headers" do
+      request = Req.new()
+      response = %Req.Response{status: 429, headers: %{"retry-after" => ["3"]}}
+
+      assert Retry.should_retry?(request, response) == {:delay, 3_000}
+    end
+
     test "returns false for successful responses" do
       request = Req.new()
       response = %Req.Response{status: 200, body: "OK"}

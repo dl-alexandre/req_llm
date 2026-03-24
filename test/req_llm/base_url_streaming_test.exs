@@ -332,5 +332,20 @@ defmodule ReqLLM.BaseURLStreamingTest do
       assert body_map["stream"] == true
       assert body_map["model"] == "gpt-4o-mini"
     end
+
+    test "constructed request includes custom headers from map req_http_options" do
+      {:ok, model} = ReqLLM.model("openai:gpt-4o-mini")
+      context = Context.new([Context.user("hello")])
+
+      opts = [
+        api_key: "[REDACTED:api-key]",
+        req_http_options: %{headers: [{"X-Test-Header", "present"}]}
+      ]
+
+      {:ok, finch_request} =
+        ReqLLM.Providers.OpenAI.ChatAPI.attach_stream(model, context, opts, nil)
+
+      assert {"X-Test-Header", "present"} in finch_request.headers
+    end
   end
 end

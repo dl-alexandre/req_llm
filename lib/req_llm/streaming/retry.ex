@@ -245,16 +245,11 @@ defmodule ReqLLM.Streaming.Retry do
   defp deliver_rate_limit_failure(state, callback) do
     callback_acc =
       state.callback_acc
-      |> maybe_emit_status(callback, state.status)
+      |> callback.({:status, 429})
       |> maybe_emit_headers(callback, state.headers)
 
     {:error, build_rate_limit_error(state), callback_acc}
   end
-
-  defp maybe_emit_status(callback_acc, _callback, nil), do: callback_acc
-
-  defp maybe_emit_status(callback_acc, callback, status),
-    do: callback.({:status, status}, callback_acc)
 
   defp maybe_emit_headers(callback_acc, _callback, []), do: callback_acc
 

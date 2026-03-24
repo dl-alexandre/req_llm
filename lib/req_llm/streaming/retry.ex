@@ -244,8 +244,7 @@ defmodule ReqLLM.Streaming.Retry do
 
   defp deliver_rate_limit_failure(state, callback) do
     callback_acc =
-      state.callback_acc
-      |> callback.({:status, 429})
+      callback.({:status, 429}, state.callback_acc)
       |> maybe_emit_headers(callback, state.headers)
 
     {:error, build_rate_limit_error(state), callback_acc}

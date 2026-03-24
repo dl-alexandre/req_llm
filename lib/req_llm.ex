@@ -449,7 +449,31 @@ defmodule ReqLLM do
     end
   end
 
-  defp resolve_provider_model_fallback(_provider, _model_id, original_error), do: original_error
+  defp resolve_provider_model_fallback(provider, model_id, _original_error) do
+    with {:ok, _provider_module} <- ReqLLM.provider(provider) do
+      IO.warn("""
+      Using unverified model: #{provider}:#{model_id}
+
+      This model is not in the LLMDB catalog. While it will work if the provider \
+      supports this model ID, some features like pricing, token counting, and \
+      capability detection may be unavailable.
+
+      To suppress this warning, use an inline model spec:
+
+          ReqLLM.model(%{provider: :#{provider}, id: "#{model_id}"})
+      """)
+
+      model(%{provider: provider, id: model_id})
+    else
+      {:error, _} ->
+        {:error,
+         ReqLLM.Error.Invalid.Provider.exception(
+           provider: provider,
+           message:
+             "Provider :#{provider} is not available. Ensure the provider is properly configured or use an inline model spec."
+         )}
+    end
+  end
 
   defp provider_atom_from_string(provider_name) when is_binary(provider_name) do
     try do

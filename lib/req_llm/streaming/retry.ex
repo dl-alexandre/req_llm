@@ -206,16 +206,6 @@ defmodule ReqLLM.Streaming.Retry do
     :no_retry
   end
 
-  defp parse_status(value) when is_binary(value) do
-    case Integer.parse(value) do
-      {status, _} -> status
-      :error -> nil
-    end
-  end
-
-  defp parse_status(value) when is_integer(value), do: value
-  defp parse_status(_), do: nil
-
   defp extract_retry_after_delay(headers) when is_list(headers) do
     retry_after =
       Enum.find_value(headers, fn

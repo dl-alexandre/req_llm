@@ -51,6 +51,7 @@ defmodule ReqLLM.Streaming.Retry do
       headers: [],
       error_body: []
     }
+
     wrapped_callback = fn event, wrapped_acc -> apply_callback(event, wrapped_acc, callback) end
 
     case stream_fun.(request, finch_name, initial_acc, wrapped_callback, stream_opts) do
@@ -214,6 +215,7 @@ defmodule ReqLLM.Streaming.Retry do
 
   defp parse_status(value) when is_integer(value), do: value
   defp parse_status(_), do: nil
+
   defp extract_retry_after_delay(headers) when is_list(headers) do
     retry_after =
       Enum.find_value(headers, fn
@@ -285,7 +287,6 @@ defmodule ReqLLM.Streaming.Retry do
       response_body: response_body,
       headers: state.headers
     )
-  end
   end
 
   defp decode_rate_limit_body(""), do: ""

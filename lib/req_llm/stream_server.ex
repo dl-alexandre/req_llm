@@ -61,6 +61,7 @@ defmodule ReqLLM.StreamServer do
 
   use GenServer
 
+  alias ReqLLM.MapAccess
   alias ReqLLM.StreamChunk
   alias ReqLLM.Streaming.SSE
 
@@ -104,7 +105,15 @@ defmodule ReqLLM.StreamServer do
     raw_iodata: [],
     raw_bytes: 0,
     terminated?: false,
-    message_acc: %ReqLLM.Provider.ChunkAccumulator{}
+    message_acc: %ReqLLM.Provider.ChunkAccumulator{},
+    # Per-call wall-clock timestamps for server-side builtin tool
+    # invocations. Populated as `response.output_item.added` /
+    # `response.output_item.done` SSE events arrive (for builtin segment
+    # types). Surfaced to the `[:req_llm, :request, :stop]` event so the
+    # OTel bridge can emit `gen_ai.execute_tool` child spans with
+    # measured durations. Keyed by call id, values are
+    # `%{start_unix_nano: integer, end_unix_nano: integer}`.
+    builtin_tool_timing: %{}
   ]
 
   @doc """
@@ -826,12 +835,19 @@ defmodule ReqLLM.StreamServer do
   defp terminal_chunk?(_chunk), do: false
 
   defp enqueue_chunks(chunks, state) do
-    {new_queue, updated_metadata, new_obj_acc, telemetry, message_acc} =
+    {new_queue, updated_metadata, new_obj_acc, telemetry, message_acc, builtin_timing} =
       Enum.reduce(
         chunks,
-        {state.queue, state.metadata, state.object_acc, state.telemetry, state.message_acc},
-        fn chunk, {queue, metadata, obj_acc, telemetry, msg_acc} ->
-          new_queue = :queue.in(chunk, queue)
+        {state.queue, state.metadata, state.object_acc, state.telemetry, state.message_acc,
+         state.builtin_tool_timing},
+        fn chunk, {queue, metadata, obj_acc, telemetry, msg_acc, timing} ->
+          public_chunk = public_stream_chunk(chunk)
+
+          new_queue =
+            case public_chunk do
+              nil -> queue
+              chunk -> :queue.in(chunk, queue)
+            end
 
           updated_metadata =
             case chunk.type do
@@ -851,28 +867,43 @@ defmodule ReqLLM.StreamServer do
                     metadata
                   end
 
-                Map.merge(meta_with_usage, Map.drop(chunk_meta, [:usage, "usage"]))
+                Map.merge(
+                  meta_with_usage,
+                  Map.drop(chunk_meta, [
+                    :usage,
+                    "usage",
+                    :builtin_tool_started,
+                    "builtin_tool_started"
+                  ])
+                )
 
               _ ->
                 metadata
             end
 
+          timing = update_builtin_timing(timing, chunk)
+
           obj_acc =
-            if state.object_json_mode? and chunk.type == :content and is_binary(chunk.text) do
+            if state.object_json_mode? and content_chunk?(public_chunk) do
               [obj_acc, chunk.text]
             else
               obj_acc
             end
 
-          msg_acc = ReqLLM.Provider.ChunkAccumulator.push(msg_acc, chunk)
-
-          telemetry =
-            case telemetry do
-              nil -> nil
-              context -> ReqLLM.Telemetry.observe_stream_chunk(context, chunk)
+          msg_acc =
+            case public_chunk do
+              nil -> msg_acc
+              chunk -> ReqLLM.Provider.ChunkAccumulator.push(msg_acc, chunk)
             end
 
-          {new_queue, updated_metadata, obj_acc, telemetry, msg_acc}
+          telemetry =
+            case {telemetry, public_chunk} do
+              {nil, _chunk} -> nil
+              {context, nil} -> context
+              {context, chunk} -> ReqLLM.Telemetry.observe_stream_chunk(context, chunk)
+            end
+
+          {new_queue, updated_metadata, obj_acc, telemetry, msg_acc, timing}
         end
       )
 
@@ -882,9 +913,70 @@ defmodule ReqLLM.StreamServer do
         metadata: updated_metadata,
         object_acc: new_obj_acc,
         telemetry: telemetry,
-        message_acc: message_acc
+        message_acc: message_acc,
+        builtin_tool_timing: builtin_timing
     }
   end
+
+  defp public_stream_chunk(%ReqLLM.StreamChunk{type: :meta, metadata: meta} = chunk)
+       when is_map(meta) do
+    metadata = Map.drop(meta, [:builtin_tool_started, "builtin_tool_started"])
+
+    if map_size(metadata) == 0 do
+      nil
+    else
+      %{chunk | metadata: metadata}
+    end
+  end
+
+  defp public_stream_chunk(%ReqLLM.StreamChunk{type: :tool_call, metadata: meta} = chunk)
+       when is_map(meta) do
+    %{chunk | metadata: Map.drop(meta, [:done_at_unix_nano, "done_at_unix_nano"])}
+  end
+
+  defp public_stream_chunk(chunk), do: chunk
+
+  defp content_chunk?(%ReqLLM.StreamChunk{type: :content, text: text}) when is_binary(text),
+    do: true
+
+  defp content_chunk?(_chunk), do: false
+
+  # Captures `:added → :done` wall-clock timestamps for server-side
+  # builtin tool calls (e.g. web_search_call on the Responses API).
+  # Paired chunks carry the same call id: the `:meta` chunk with
+  # `builtin_tool_started.id` records the start, the `:tool_call` chunk
+  # with `builtin? == true` records the end.
+  defp update_builtin_timing(timing, %ReqLLM.StreamChunk{type: :meta, metadata: meta})
+       when is_map(meta) do
+    case MapAccess.get(meta, :builtin_tool_started) do
+      started when is_map(started) ->
+        id = MapAccess.get(started, :id)
+        t = MapAccess.get(started, :started_at_unix_nano)
+
+        if not is_nil(id) and is_integer(t) do
+          Map.update(timing, id, %{start_unix_nano: t}, &Map.put(&1, :start_unix_nano, t))
+        else
+          timing
+        end
+
+      _ ->
+        timing
+    end
+  end
+
+  defp update_builtin_timing(timing, %ReqLLM.StreamChunk{type: :tool_call, metadata: meta})
+       when is_map(meta) do
+    id = MapAccess.get(meta, :id)
+    t = MapAccess.get(meta, :done_at_unix_nano)
+
+    if MapAccess.get(meta, :builtin?) == true and not is_nil(id) and is_integer(t) do
+      Map.update(timing, id, %{end_unix_nano: t}, &Map.put(&1, :end_unix_nano, t))
+    else
+      timing
+    end
+  end
+
+  defp update_builtin_timing(timing, _chunk), do: timing
 
   # Synthesizes a partial assistant `%Message{}` from the accumulated stream
   # chunks for OTel content capture (`gen_ai.output.messages`). The canonical
@@ -1255,6 +1347,7 @@ defmodule ReqLLM.StreamServer do
         finish_reason: normalize_telemetry_stream_finish_reason(finish_reason),
         http_status: state.http_status,
         usage: usage,
+        builtin_tool_timing: state.builtin_tool_timing,
         emit_token_usage?: is_map(usage)
       )
 

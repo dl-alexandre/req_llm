@@ -23,6 +23,15 @@ defmodule ReqLLM.OpenTelemetry.Adapter do
   `metrics_available?/0`, `record_histogram/2`. The bridge only invokes
   these when both `available?/0` and `metrics_available?/0` return `true`.
 
+  ## Optional callbacks (child spans for server-side tool execution)
+
+  `start_child_span/5`, `end_span_at/3`. The bridge invokes these to emit
+  `gen_ai.execute_tool` child spans for server-side builtin tool calls
+  (e.g. `web_search_call` on the OpenAI Responses API). Adapters that
+  don't implement them get a fallback: the bridge calls `start_span/3` +
+  `end_span/2` instead, which records the same data but loses the
+  parent-child relationship (the sub-spans appear as siblings).
+
   ## Example — inject caller-context on every ReqLLM span
 
   The cleanest way to wrap the default adapter is to delegate everything and
@@ -59,8 +68,22 @@ defmodule ReqLLM.OpenTelemetry.Adapter do
   @callback end_span(term(), keyword()) :: :ok
   @callback metrics_available?() :: boolean()
   @callback record_histogram(map(), keyword()) :: :ok
+  @callback start_child_span(
+              parent :: term(),
+              name :: String.t(),
+              attributes :: map(),
+              opts :: %{
+                optional(:kind) => atom(),
+                optional(:start_time) => integer()
+              },
+              config :: keyword()
+            ) :: term()
+  @callback end_span_at(span :: term(), end_time :: integer(), config :: keyword()) :: :ok
 
-  @optional_callbacks metrics_available?: 0, record_histogram: 2
+  @optional_callbacks metrics_available?: 0,
+                      record_histogram: 2,
+                      start_child_span: 5,
+                      end_span_at: 3
 end
 
 defmodule ReqLLM.OpenTelemetry.OTelAdapter do
@@ -154,6 +177,52 @@ defmodule ReqLLM.OpenTelemetry.OTelAdapter do
     call(:otel_span, :end_span, [span])
     :ok
   end
+
+  @impl true
+  def start_child_span(parent, name, attributes, opts, config) do
+    if child_span_available?() do
+      ctx = call(:otel_ctx, :get_current, [])
+      child_ctx = call(:otel_tracer, :set_current_span, [ctx, parent])
+
+      span_opts =
+        %{
+          kind: Map.get(opts, :kind, :internal),
+          attributes: attributes
+        }
+        |> maybe_put(:start_time, Map.get(opts, :start_time))
+
+      call(:otel_tracer, :start_span, [child_ctx, tracer(), name, span_opts])
+    else
+      start_span(name, attributes, config)
+    end
+  end
+
+  @impl true
+  def end_span_at(span, end_time, config) when is_integer(end_time) do
+    if Code.ensure_loaded?(:otel_span) and function_exported?(:otel_span, :end_span, 2) do
+      call(:otel_span, :end_span, [span, end_time])
+    else
+      end_span(span, config)
+    end
+
+    :ok
+  end
+
+  defp child_span_available? do
+    Enum.all?(
+      [
+        {:otel_ctx, :get_current, 0},
+        {:otel_tracer, :set_current_span, 2},
+        {:otel_tracer, :start_span, 4}
+      ],
+      fn {module, function, arity} ->
+        Code.ensure_loaded?(module) and function_exported?(module, function, arity)
+      end
+    )
+  end
+
+  defp maybe_put(map, _key, nil), do: map
+  defp maybe_put(map, key, value), do: Map.put(map, key, value)
 
   @impl true
   def record_histogram(record, _config) do

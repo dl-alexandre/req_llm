@@ -74,6 +74,7 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
     "mcp_call" => :mcp_call,
     "x_search_call" => :x_search_call
   }
+  @tool_call_item_reserved_keys ["id", "call_id", "type", "status", :id, :call_id, :type, :status]
   @assistant_phases ["commentary", "final_answer"]
   @reasoning_encrypted_content_include ["reasoning.encrypted_content"]
 
@@ -391,7 +392,7 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
   defp track_tool_call(state, _event_type, _data), do: state
 
   defp maybe_add_tool_call_from_item(state, item) do
-    item_type = item["type"]
+    item_type = item["type"] || item[:type]
 
     if is_binary(item_type) do
       case tool_usage_key_from_call_type(item_type) do
@@ -430,8 +431,10 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
   defp extract_tool_call_id(data, call_type) when is_map(data) do
     call_type = if is_atom(call_type), do: Atom.to_string(call_type), else: call_type
 
-    data["id"] || data["call_id"] || data["item_id"] ||
+    data["id"] || data[:id] || data["call_id"] || data[:call_id] ||
+      data["item_id"] || data[:item_id] ||
       get_in(data, ["item", "id"]) ||
+      get_in(data, [:item, :id]) ||
       extract_tool_call_id_from_payload(data, call_type)
   end
 
@@ -439,7 +442,7 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
     call_data = Map.get(data, call_type) || maybe_get_call_atom_key(data, call_type)
 
     if is_map(call_data) do
-      call_data["id"] || call_data["call_id"]
+      call_data["id"] || call_data[:id] || call_data["call_id"] || call_data[:call_id]
     end
   end
 
@@ -1077,11 +1080,22 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
   defp handle_function_call_name_delta(_), do: []
 
   defp handle_output_item_added(%{"item" => item} = data) when is_map(item) do
-    case item["type"] do
+    handle_output_item_added_item(item, data)
+  end
+
+  defp handle_output_item_added(%{item: item} = data) when is_map(item) do
+    handle_output_item_added_item(item, data)
+  end
+
+  defp handle_output_item_added(_), do: []
+
+  defp handle_output_item_added_item(item, data) do
+    case item["type"] || item[:type] do
       "function_call" ->
-        index = data["output_index"] || 0
-        call_id = item["call_id"] || item["id"] || "call_#{:erlang.unique_integer([:positive])}"
-        name = item["name"]
+        index = stream_output_index(data)
+        call_id = item["call_id"] || item[:call_id] || item["id"] || item[:id]
+        call_id = call_id || "call_#{:erlang.unique_integer([:positive])}"
+        name = item["name"] || item[:name]
 
         if name && name != "" do
           [ReqLLM.StreamChunk.tool_call(name, %{}, %{id: call_id, index: index})]
@@ -1090,14 +1104,25 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
         end
 
       type when is_binary(type) ->
-        []
+        if Map.has_key?(@tool_call_atom_keys, type) do
+          [
+            ReqLLM.StreamChunk.meta(%{
+              builtin_tool_started: %{
+                id: item["id"] || item[:id] || item["call_id"] || item[:call_id],
+                name: type,
+                index: stream_output_index(data),
+                started_at_unix_nano: System.system_time(:nanosecond)
+              }
+            })
+          ]
+        else
+          []
+        end
 
       _ ->
         []
     end
   end
-
-  defp handle_output_item_added(_), do: []
 
   defp handle_output_item_done(data, state \\ nil)
 
@@ -1135,7 +1160,7 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
     if tool_call_emitted?(state, index) do
       args =
         item
-        |> Map.drop(["id", "call_id", "type", "status"])
+        |> Map.drop(@tool_call_item_reserved_keys)
         |> Jason.encode!()
 
       [
@@ -1144,17 +1169,22 @@ defmodule ReqLLM.Providers.OpenAI.ResponsesAPI do
         })
       ]
     else
-      id = item["id"] || item["call_id"]
+      id = item["id"] || item[:id] || item["call_id"] || item[:call_id]
 
       args_map =
         item
-        |> Map.drop(["id", "call_id", "type", "status"])
+        |> Map.drop(@tool_call_item_reserved_keys)
 
       [
         ReqLLM.StreamChunk.tool_call(
           type,
           args_map,
-          %{id: id, index: index, builtin?: true}
+          %{
+            id: id,
+            index: index,
+            builtin?: true,
+            done_at_unix_nano: System.system_time(:nanosecond)
+          }
         )
       ]
     end

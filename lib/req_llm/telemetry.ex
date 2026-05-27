@@ -1132,6 +1132,14 @@ defmodule ReqLLM.Telemetry do
     end
   end
 
+  defp decode_json_body(body) when is_list(body) do
+    body
+    |> IO.iodata_to_binary()
+    |> decode_json_body()
+  rescue
+    ArgumentError -> body
+  end
+
   defp decode_json_body(body), do: body
 
   defp normalize_requested_reasoning(contract, opts) do

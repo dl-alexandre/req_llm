@@ -125,8 +125,8 @@ defmodule ReqLLM.Providers.NearAITest do
       }
 
       encoded_request = NearAI.encode_body(request)
-      assert_no_duplicate_json_keys(encoded_request.body)
-      decoded = Jason.decode!(encoded_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(encoded_request))
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       assert decoded["model"] == "anthropic/claude-haiku-4-5"
       assert decoded["max_tokens"] == 512
@@ -158,7 +158,7 @@ defmodule ReqLLM.Providers.NearAITest do
       }
 
       encoded_request = NearAI.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
       function = decoded["tools"] |> hd() |> Map.fetch!("function")
 
       assert function["name"] == "get_weather"

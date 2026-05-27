@@ -103,7 +103,7 @@ defmodule ReqLLM.Providers.MistralTest do
       }
 
       updated_request = Mistral.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["random_seed"] == 7
       assert decoded["parallel_tool_calls"] == false
@@ -130,7 +130,7 @@ defmodule ReqLLM.Providers.MistralTest do
       }
 
       updated_request = Mistral.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "mistral-embed"
       assert decoded["input"] == ["hello world"]

@@ -37,7 +37,7 @@ defmodule ReqLLM.Providers.OpenAI.ImagesAPI do
       |> maybe_put_string("negative_prompt", opts[:negative_prompt])
 
     request
-    |> Map.put(:body, Jason.encode!(body))
+    |> put_in([Access.key!(:options), :json], body)
   end
 
   @impl true

@@ -590,7 +590,7 @@ defmodule ReqLLM.Providers.Google do
     |> Req.Request.merge_options([model: model.id, params: [key: api_key]] ++ req_opts)
     |> ReqLLM.Step.Error.attach()
     |> ReqLLM.Step.Retry.attach(user_opts)
-    |> Req.Request.append_request_steps(llm_encode_body: &__MODULE__.encode_body/1)
+    |> Req.Request.prepend_request_steps(llm_encode_body: &__MODULE__.encode_body/1)
     |> Req.Request.append_response_steps(llm_decode_response: &__MODULE__.decode_response/1)
     |> ReqLLM.Step.Usage.attach(model)
     |> ReqLLM.Step.Telemetry.attach(model, user_opts)
@@ -925,16 +925,8 @@ defmodule ReqLLM.Providers.Google do
           encode_chat_body(request)
       end
 
-    try do
-      encoded_body = Jason.encode!(body)
-
-      request
-      |> Req.Request.put_header("content-type", "application/json")
-      |> Map.put(:body, encoded_body)
-    rescue
-      error ->
-        reraise error, __STACKTRACE__
-    end
+    request
+    |> put_in([Access.key!(:options), :json], ReqLLM.Schema.apply_property_ordering(body))
   end
 
   defp encode_image_body(request) do
@@ -2011,11 +2003,11 @@ defmodule ReqLLM.Providers.Google do
 
     temp_request =
       Req.new(method: :post, url: URI.parse("https://example.com/temp"))
-      |> Map.put(:body, {:json, %{}})
       |> Map.put(:options, Map.new(all_options))
 
-    encoded_request = encode_body(temp_request)
-    encoded_request.body
+    request_with_json = encode_body(temp_request)
+    json_body = request_with_json.options[:json] || %{}
+    Jason.encode_to_iodata!(json_body)
   end
 
   @impl ReqLLM.Provider

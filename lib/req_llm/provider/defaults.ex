@@ -584,7 +584,7 @@ defmodule ReqLLM.Provider.Defaults do
     )
     |> ReqLLM.Step.Retry.attach()
     |> ReqLLM.Step.Error.attach()
-    |> Req.Request.append_request_steps(llm_encode_body: &provider_mod.encode_body/1)
+    |> Req.Request.prepend_request_steps(llm_encode_body: &provider_mod.encode_body/1)
     |> Req.Request.append_response_steps(llm_decode_response: &provider_mod.decode_response/1)
     |> ReqLLM.Step.Usage.attach(model)
     |> ReqLLM.Step.Telemetry.attach(model, user_opts)
@@ -684,14 +684,9 @@ defmodule ReqLLM.Provider.Defaults do
   """
   @spec encode_body_from_map(Req.Request.t(), map()) :: Req.Request.t()
   def encode_body_from_map(request, body) do
-    encoded_body =
-      body
-      |> ReqLLM.Schema.apply_property_ordering()
-      |> Jason.encode!()
-
     request
     |> Req.Request.put_header("content-type", "application/json")
-    |> Map.put(:body, encoded_body)
+    |> put_in([Access.key!(:options), :json], ReqLLM.Schema.apply_property_ordering(body))
   rescue
     error ->
       reraise error, __STACKTRACE__
@@ -1833,12 +1828,15 @@ defmodule ReqLLM.Provider.Defaults do
       method: :post,
       url: URI.parse("https://example.com/temp"),
       headers: %{},
-      body: {:json, %{}},
+      body: nil,
       options: Map.new(req_opts)
     }
 
     # Use provider's encode_body to build the JSON
-    encoded_request = provider_mod.encode_body(temp_request)
+    encoded_request =
+      temp_request
+      |> provider_mod.encode_body()
+      |> Req.Steps.encode_body()
 
     # Return the encoded body (should be JSON string)
     encoded_request.body

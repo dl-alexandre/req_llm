@@ -23,7 +23,7 @@ defmodule ReqLLM.Providers.ZaiTest do
       request = %Req.Request{options: [context: context, model: model.model, stream: false]}
 
       encoded_request = Zai.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       [_user_msg, assistant_msg, _followup_msg] = decoded["messages"]
 
@@ -46,7 +46,7 @@ defmodule ReqLLM.Providers.ZaiTest do
       request = %Req.Request{options: [context: context, model: model.model, stream: false]}
 
       encoded_request = Zai.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       [assistant_msg, user_msg] = decoded["messages"]
 

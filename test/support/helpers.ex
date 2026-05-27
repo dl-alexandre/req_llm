@@ -64,6 +64,35 @@ defmodule ReqLLM.Test.Helpers do
   def pricing_from_cost(_), do: %{components: []}
 
   @doc """
+  Returns a decoded JSON body from a request-like struct.
+
+  Req keeps `options[:json]` unencoded until its native encode step runs, while
+  some lower-level tests still inspect provider body builders directly.
+  """
+  def json_body(request_or_body) do
+    request_or_body
+    |> json_iodata()
+    |> Jason.decode!()
+  end
+
+  @doc """
+  Returns JSON iodata from either a materialized body or pending `options[:json]`.
+  """
+  def json_iodata(%Req.Request{options: options, body: body}) do
+    case options[:json] do
+      nil -> json_iodata(body)
+      json -> json |> Jason.encode_to_iodata!() |> IO.iodata_to_binary()
+    end
+  end
+
+  def json_iodata(%{body: body}), do: json_iodata(body)
+  def json_iodata({:json, body}), do: body |> Jason.encode_to_iodata!() |> IO.iodata_to_binary()
+
+  def json_iodata(body) when is_binary(body) or is_list(body) do
+    IO.iodata_to_binary(body)
+  end
+
+  @doc """
   Calculate cost using ReqLLM.Billing from a raw usage map.
   """
   def billing_cost(model, usage) do

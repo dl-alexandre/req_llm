@@ -90,7 +90,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
         )
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["model"] == "accounts/fireworks/models/kimi-k2-instruct"
       assert is_list(body["messages"])
@@ -111,7 +111,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
       {:ok, request} = FireworksAI.prepare_request(:chat, model, "Hello", temperature: 0.0)
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "min_p")
       refute Map.has_key?(body, "reasoning_effort")
@@ -151,7 +151,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
       }
 
       {:ok, request} = FireworksAI.prepare_request(:chat, model, context, temperature: 0.0)
-      body = Jason.decode!(FireworksAI.encode_body(request).body)
+      body = ReqLLM.Test.Helpers.json_body(FireworksAI.encode_body(request))
 
       for msg <- body["messages"] do
         refute Map.has_key?(msg, "metadata"),
@@ -182,7 +182,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
       {:ok, request} = FireworksAI.prepare_request(:chat, model, "Hi", tools: [tool])
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert is_list(body["tools"])
       assert hd(body["tools"])["function"]["name"] == "get_weather"
@@ -246,7 +246,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
           FireworksAI.prepare_request(:chat, model, "Hi", reasoning_effort: atom_value)
 
         encoded = FireworksAI.encode_body(request)
-        body = Jason.decode!(encoded.body)
+        body = ReqLLM.Test.Helpers.json_body(encoded)
         assert body["reasoning_effort"] == expected
       end
     end
@@ -261,7 +261,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
         )
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
       assert body["reasoning_effort"] == "max"
     end
 
@@ -273,7 +273,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
         FireworksAI.prepare_request(:chat, model, "Hi", reasoning_effort: :default)
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
       refute Map.has_key?(body, "reasoning_effort")
     end
   end
@@ -298,7 +298,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
         )
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["tool_choice"] == %{"type" => "function", "function" => %{"name" => "add"}}
     end
@@ -316,7 +316,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
         )
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["parallel_tool_calls"] == true
       assert body["max_completion_tokens"] == 500
@@ -332,8 +332,10 @@ defmodule ReqLLM.Providers.FireworksAITest do
       {:ok, nested_request} =
         FireworksAI.prepare_request(:chat, model, "Hi", provider_options: [top_k: 41])
 
-      assert Jason.decode!(FireworksAI.encode_body(top_level_request).body)["top_k"] == 40
-      assert Jason.decode!(FireworksAI.encode_body(nested_request).body)["top_k"] == 41
+      assert ReqLLM.Test.Helpers.json_body(FireworksAI.encode_body(top_level_request))["top_k"] ==
+               40
+
+      assert ReqLLM.Test.Helpers.json_body(FireworksAI.encode_body(nested_request))["top_k"] == 41
     end
 
     test "tool.strict flag is preserved in the encoded tool schema" do
@@ -352,7 +354,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
       {:ok, request} = FireworksAI.prepare_request(:chat, model, "Hi", tools: [tool])
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert hd(body["tools"])["function"]["strict"] == true
     end
@@ -380,7 +382,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
           temperature: 0.0
         )
 
-      body = Jason.decode!(FireworksAI.encode_body(request).body)
+      body = ReqLLM.Test.Helpers.json_body(FireworksAI.encode_body(request))
       refute Map.has_key?(body, "tools")
 
       assert %{
@@ -410,7 +412,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
           fireworks_json_schema_strict: false
         )
 
-      body = Jason.decode!(FireworksAI.encode_body(request).body)
+      body = ReqLLM.Test.Helpers.json_body(FireworksAI.encode_body(request))
 
       assert body["response_format"]["json_schema"]["strict"] == false
     end
@@ -426,7 +428,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
           provider_options: [fireworks_json_schema_strict: false]
         )
 
-      body = Jason.decode!(FireworksAI.encode_body(request).body)
+      body = ReqLLM.Test.Helpers.json_body(FireworksAI.encode_body(request))
 
       assert body["response_format"]["json_schema"]["strict"] == false
     end
@@ -439,7 +441,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
           fireworks_structured_output_mode: :tool
         )
 
-      body = Jason.decode!(FireworksAI.encode_body(request).body)
+      body = ReqLLM.Test.Helpers.json_body(FireworksAI.encode_body(request))
 
       refute Map.has_key?(body, "response_format")
       assert hd(body["tools"])["function"]["name"] == "structured_output"
@@ -457,7 +459,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
       {:ok, request} = FireworksAI.prepare_request(:chat, model, "Hi", stream: true)
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["stream"] == true
       assert body["stream_options"] == %{"include_usage" => true}
@@ -470,7 +472,7 @@ defmodule ReqLLM.Providers.FireworksAITest do
       {:ok, request} = FireworksAI.prepare_request(:chat, model, "Hi", stream: false)
 
       encoded = FireworksAI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "stream_options")
     end

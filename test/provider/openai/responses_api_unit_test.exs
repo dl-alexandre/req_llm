@@ -14,7 +14,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(max_output_tokens: 1000)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["max_output_tokens"] == 1000
       assert body["model"] == "gpt-5"
@@ -25,7 +25,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(max_completion_tokens: 2048)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["max_output_tokens"] == 2048
     end
@@ -34,7 +34,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(max_tokens: 512)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["max_output_tokens"] == 512
     end
@@ -48,7 +48,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
         )
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["max_output_tokens"] == 1000
     end
@@ -57,7 +57,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(stream: true)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["stream"] == true
     end
@@ -76,7 +76,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(tools: [tool])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert [encoded_tool] = body["tools"]
       assert encoded_tool["type"] == "function"
@@ -100,7 +100,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(tools: [tool])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert [encoded_tool] = body["tools"]
       assert encoded_tool["strict"] == false
@@ -123,7 +123,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(tools: [tool])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert [encoded_tool] = body["tools"]
       assert encoded_tool["strict"] == true
@@ -136,7 +136,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
           request = build_request([])
 
           encoded = ResponsesAPI.encode_body(request)
-          body = Jason.decode!(encoded.body)
+          body = ReqLLM.Test.Helpers.json_body(encoded)
 
           assert body["model"] == "gpt-5"
         end)
@@ -148,7 +148,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(tools: [])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "tools")
     end
@@ -157,7 +157,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(tool_choice: :auto)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["tool_choice"] == "auto"
     end
@@ -166,7 +166,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(tool_choice: :none)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["tool_choice"] == "none"
     end
@@ -175,7 +175,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(tool_choice: :required)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["tool_choice"] == "required"
     end
@@ -204,7 +204,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       tool_output =
         Enum.find(body["input"], fn item ->
@@ -280,7 +280,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       tool_output =
         Enum.find(body["input"], fn item ->
@@ -323,7 +323,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       tool_output =
         Enum.find(body["input"], fn item ->
@@ -349,7 +349,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
         build_request(tool_choice: %{type: "function", function: %{name: "get_weather"}})
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["tool_choice"] == %{"type" => "function", "name" => "get_weather"}
     end
@@ -359,7 +359,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
         build_request(tool_choice: %{"type" => "function", "function" => %{"name" => "search"}})
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["tool_choice"] == %{"type" => "function", "name" => "search"}
     end
@@ -368,7 +368,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(parallel_tool_calls: true)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["parallel_tool_calls"] == true
     end
@@ -377,7 +377,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(parallel_tool_calls: false)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["parallel_tool_calls"] == false
     end
@@ -386,7 +386,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request([])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "parallel_tool_calls")
     end
@@ -395,7 +395,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(reasoning_effort: :medium)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["reasoning"] == %{"effort" => "medium"}
     end
@@ -404,7 +404,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(reasoning_effort: "high")
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["reasoning"] == %{"effort" => "high"}
     end
@@ -413,7 +413,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(reasoning_effort: :none)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["reasoning"] == %{"effort" => "none"}
     end
@@ -422,7 +422,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(reasoning_effort: :minimal)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["reasoning"] == %{"effort" => "minimal"}
     end
@@ -431,7 +431,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(reasoning_effort: :xhigh)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["reasoning"] == %{"effort" => "xhigh"}
     end
@@ -440,7 +440,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(provider_options: [])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "reasoning")
     end
@@ -497,7 +497,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert [input1, input2] = body["input"]
       assert input1["role"] == "user"
@@ -524,7 +524,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(provider_options: [response_format: response_format])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["text"]["format"]["type"] == "json_schema"
       assert body["text"]["format"]["name"] == "person_schema"
@@ -539,7 +539,8 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       refute Map.has_key?(body["text"]["format"]["schema"], "propertyOrdering")
 
       # Verify the actual JSON wire order of properties
-      assert encoded.body =~ ~r/"properties"\s*:\s*\{\s*"name".*"age"/s
+      assert IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(encoded)) =~
+               ~r/"properties"\s*:\s*\{\s*"name".*"age"/s
     end
 
     test "encodes response_format with direct JSON schema (pass-through)" do
@@ -565,7 +566,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(provider_options: [response_format: response_format])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["text"]["format"]["type"] == "json_schema"
       assert body["text"]["format"]["name"] == "weather_schema"
@@ -593,7 +594,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(provider_options: [response_format: response_format])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["text"]["format"]["type"] == "json_schema"
       assert body["text"]["format"]["name"] == "search_schema"
@@ -605,7 +606,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(provider_options: [verbosity: :low])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["text"]["verbosity"] == "low"
     end
@@ -614,7 +615,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(provider_options: [verbosity: "high"])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["text"]["verbosity"] == "high"
     end
@@ -623,7 +624,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(provider_options: [])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "text")
     end
@@ -648,7 +649,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
         build_request(provider_options: [response_format: response_format, verbosity: :medium])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["text"]["format"]["type"] == "json_schema"
       assert body["text"]["format"]["name"] == "test_schema"
@@ -1843,7 +1844,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert [reasoning_input | _rest] = body["input"]
       assert reasoning_input["type"] == "reasoning"
@@ -1878,7 +1879,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["previous_response_id"] == "resp_prev_123"
 
@@ -1903,7 +1904,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context, provider_options: [store: false])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "previous_response_id")
       assert body["store"] == false
@@ -1925,7 +1926,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["previous_response_id"] == "resp_prev_456"
       assert body["store"] == true
@@ -1947,7 +1948,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(id: "gpt-5.3-codex", context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "previous_response_id")
       assert body["store"] == false
@@ -1963,7 +1964,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context, provider_options: [store: false])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       refute Map.has_key?(body, "previous_response_id")
       assert body["store"] == false
@@ -1999,7 +2000,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       log =
         capture_log(fn ->
           encoded = ResponsesAPI.encode_body(request)
-          body = Jason.decode!(encoded.body)
+          body = ReqLLM.Test.Helpers.json_body(encoded)
 
           refute Enum.any?(body["input"], fn item ->
                    item["type"] == "reasoning"
@@ -2035,7 +2036,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       [reasoning_input | _] = body["input"]
       assert reasoning_input["type"] == "reasoning"
@@ -2071,7 +2072,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context)
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert [reasoning_input | _rest] = body["input"]
       assert reasoning_input["type"] == "reasoning"
@@ -2097,7 +2098,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context, provider_options: [store: false])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert Enum.at(body["input"], 0) == %{
                "role" => "assistant",
@@ -2138,7 +2139,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
       request = build_request(context: context, provider_options: [store: false])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert Enum.take(body["input"], 2) == [
                %{
@@ -2179,7 +2180,7 @@ defmodule Provider.OpenAI.ResponsesAPIUnitTest do
         build_request(context: decoded_resp.body.context, provider_options: [store: false])
 
       encoded = ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["input"] == [
                %{

@@ -71,7 +71,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -102,7 +102,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       [encoded_tool] = decoded["tools"]
@@ -133,7 +133,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert length(decoded["tools"]) == 5
 
@@ -164,7 +164,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
       {:ok, request} = Anthropic.prepare_request(:chat, model, context, tools: [tool])
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       [encoded_tool] = decoded["tools"]
@@ -181,7 +181,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         Anthropic.prepare_request(:chat, model, context, anthropic_prompt_cache: true)
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["system"])
       [system_block] = decoded["system"]
@@ -209,7 +209,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         Anthropic.prepare_request(:chat, model, context, anthropic_prompt_cache: true)
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["system"])
       assert length(decoded["system"]) == 2
@@ -228,7 +228,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
       {:ok, request} = Anthropic.prepare_request(:chat, model, context, [])
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["system"] == "You are a helpful assistant."
     end
@@ -257,7 +257,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [system_block] = decoded["system"]
       assert system_block["cache_control"] == %{"type" => "ephemeral", "ttl" => "2h"}
@@ -288,7 +288,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       [encoded_tool] = decoded["tools"]
@@ -315,7 +315,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       messages = decoded["messages"]
       assert length(messages) == 3
@@ -353,7 +353,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["messages"]
       assert length(user_msg["content"]) == 2
@@ -376,7 +376,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       last_msg = List.last(decoded["messages"])
       [content_block] = last_msg["content"]
@@ -394,7 +394,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       last_msg = List.last(decoded["messages"])
       refute has_cache_control?(last_msg)
@@ -411,7 +411,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       last_msg = List.last(decoded["messages"])
       refute has_cache_control?(last_msg)
@@ -431,7 +431,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
 
       # Should not crash
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Should have empty messages array
       assert decoded["messages"] == []
@@ -459,7 +459,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # System should be cached
       [system_block] = decoded["system"]
@@ -524,7 +524,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       messages = decoded["messages"]
       assert length(messages) == 3
@@ -555,7 +555,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       messages = decoded["messages"]
       [first_msg, second_msg, third_msg] = messages
@@ -584,7 +584,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       messages = decoded["messages"]
       [first_msg, second_msg, third_msg] = messages
@@ -613,7 +613,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       messages = decoded["messages"]
       [first_msg, second_msg, third_msg] = messages
@@ -635,7 +635,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # No message should have cache_control
       for msg <- decoded["messages"] do
@@ -654,7 +654,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # No message should have cache_control
       for msg <- decoded["messages"] do
@@ -679,7 +679,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # -1 = last message, so the only message gets cached
       [only_msg] = decoded["messages"]
@@ -702,7 +702,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [only_msg] = decoded["messages"]
       assert has_cache_control?(only_msg)
@@ -724,7 +724,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # -2 on single message is out of bounds
       [only_msg] = decoded["messages"]
@@ -744,7 +744,7 @@ defmodule ReqLLM.Providers.AnthropicPromptCacheTest do
         )
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # No messages to cache
       assert decoded["messages"] == []

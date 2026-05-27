@@ -240,8 +240,8 @@ defmodule ReqLLM.Providers.VeniceTest do
       }
 
       updated_request = Venice.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "venice-uncensored"
       assert is_list(decoded["messages"])
@@ -266,8 +266,8 @@ defmodule ReqLLM.Providers.VeniceTest do
       }
 
       updated_request = Venice.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert Map.has_key?(decoded, "venice_parameters")
       venice_params = decoded["venice_parameters"]
@@ -293,8 +293,8 @@ defmodule ReqLLM.Providers.VeniceTest do
       }
 
       updated_request = Venice.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       venice_params = decoded["venice_parameters"]
       assert venice_params["strip_thinking_response"] == true
@@ -326,8 +326,8 @@ defmodule ReqLLM.Providers.VeniceTest do
       }
 
       updated_request = Venice.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -359,7 +359,7 @@ defmodule ReqLLM.Providers.VeniceTest do
       }
 
       updated_request = Venice.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert Map.has_key?(decoded, "venice_parameters")

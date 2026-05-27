@@ -68,7 +68,8 @@ defmodule ReqLLM.Providers.AmazonBedrock.AdditionalTest do
         assert {:ok, request} =
                  AmazonBedrock.attach_stream(model, context, opts, __MODULE__.TestFinch)
 
-        assert request.body =~ "anthropic_version"
+        assert IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(request)) =~
+                 "anthropic_version"
       end
     end
 
@@ -193,7 +194,7 @@ defmodule ReqLLM.Providers.AmazonBedrock.AdditionalTest do
 
       {:ok, request} = AmazonBedrock.attach_stream(model, context, opts, __MODULE__.TestFinch)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["anthropic_version"] == "bedrock-2023-05-31"
       assert body["max_tokens"] == 500
       assert body["temperature"] == 0.7

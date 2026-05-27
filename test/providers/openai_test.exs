@@ -113,7 +113,7 @@ defmodule ReqLLM.Providers.OpenAITest do
 
       {:ok, request} = OpenAI.attach_stream(model, context, [api_key: "test-key"], nil)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["max_tokens"] == model.limits.output
     end
 
@@ -124,7 +124,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       {:ok, request} =
         OpenAI.attach_stream(model, context, [api_key: "test-key", max_tokens: 123], nil)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["max_tokens"] == 123
     end
 
@@ -134,7 +134,7 @@ defmodule ReqLLM.Providers.OpenAITest do
 
       {:ok, request} = OpenAI.attach_stream(model, context, [api_key: "test-key"], nil)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["max_output_tokens"] == model.limits.output
     end
 
@@ -150,7 +150,7 @@ defmodule ReqLLM.Providers.OpenAITest do
           nil
         )
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["max_output_tokens"] == 456
     end
 
@@ -161,7 +161,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       {:ok, request} =
         OpenAI.attach_stream(model, context, [api_key: "test-key", max_output_tokens: 789], nil)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["max_output_tokens"] == 789
     end
 
@@ -172,7 +172,7 @@ defmodule ReqLLM.Providers.OpenAITest do
 
       {:ok, request} = OpenAI.prepare_request(:object, model, context, compiled_schema: schema)
 
-      body = request |> OpenAI.encode_body() |> Map.fetch!(:body) |> Jason.decode!()
+      body = request |> OpenAI.encode_body() |> ReqLLM.Test.Helpers.json_body()
 
       token_limit =
         body["max_tokens"] || body["max_completion_tokens"] || body["max_output_tokens"]
@@ -350,8 +350,8 @@ defmodule ReqLLM.Providers.OpenAITest do
       # Test the encode_body function directly
       updated_request = OpenAI.encode_body(mock_request)
 
-      assert is_binary(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert is_binary(IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(updated_request)))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "gpt-4o"
       assert is_list(decoded["messages"])
@@ -388,7 +388,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -425,7 +425,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
 
@@ -460,7 +460,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
 
@@ -492,7 +492,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
 
@@ -522,7 +522,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
       messages = decoded["messages"]
 
       assistant_message = Enum.find(messages, &(&1["role"] == "assistant"))
@@ -546,7 +546,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "o1-mini"
       assert decoded["max_completion_tokens"] == 1000
@@ -568,7 +568,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "o3-mini"
       assert decoded["max_completion_tokens"] == 2000
@@ -591,7 +591,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "gpt-5"
       assert decoded["max_completion_tokens"] == 2500
@@ -613,7 +613,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "o4-mini"
       assert decoded["max_completion_tokens"] == 3000
@@ -636,7 +636,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "gpt-4o"
       assert decoded["max_tokens"] == 1500
@@ -658,7 +658,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "text-embedding-3-small"
       assert decoded["input"] == "Hello, world!"
@@ -678,7 +678,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["service_tier"] == "auto"
     end
@@ -696,7 +696,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["service_tier"] == "flex"
     end
@@ -714,7 +714,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["verbosity"] == "low"
     end
@@ -732,7 +732,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["verbosity"] == "high"
     end
@@ -749,7 +749,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       refute Map.has_key?(decoded, "verbosity")
     end
@@ -1114,7 +1114,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "text-embedding-3-large"
       assert decoded["input"] == "Test embedding text"
@@ -1239,7 +1239,7 @@ defmodule ReqLLM.Providers.OpenAITest do
 
       # Test encode_body
       encoded_request = ReqLLM.Providers.OpenAI.ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded_request.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       # Verify text parameter exists with correct structure
       # OpenAI ResponsesAPI expects name at text.format.name level, not text.format.json_schema.name
@@ -1428,7 +1428,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["logprobs"] == true
       refute Map.has_key?(decoded, "top_logprobs")
@@ -1448,7 +1448,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["logprobs"] == true
       assert decoded["top_logprobs"] == 5
@@ -1467,7 +1467,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       updated_request = OpenAI.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       refute Map.has_key?(decoded, "logprobs")
       refute Map.has_key?(decoded, "top_logprobs")
@@ -1584,7 +1584,7 @@ defmodule ReqLLM.Providers.OpenAITest do
       }
 
       encoded_request = ReqLLM.Providers.OpenAI.ResponsesAPI.encode_body(request)
-      body = Jason.decode!(encoded_request.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       assert Enum.any?(body["tools"], fn tool -> tool["type"] == "web_search" end)
     end

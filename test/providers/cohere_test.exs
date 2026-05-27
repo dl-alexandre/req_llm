@@ -80,7 +80,7 @@ defmodule ReqLLM.Providers.CohereTest do
         )
 
       encoded = Cohere.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body == %{
                "model" => "rerank-v3.5",

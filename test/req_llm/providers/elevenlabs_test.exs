@@ -116,7 +116,7 @@ defmodule ReqLLM.Providers.ElevenLabsTest do
       assert {:ok, request} =
                ElevenLabs.prepare_request(:speech, model, "Hello world", [])
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["text"] == "Hello world"
       assert body["model_id"] == "eleven_multilingual_v2"
     end
@@ -127,7 +127,7 @@ defmodule ReqLLM.Providers.ElevenLabsTest do
       assert {:ok, request} =
                ElevenLabs.prepare_request(:speech, model, "Hola", language: "es")
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["language_code"] == "es"
     end
 
@@ -139,7 +139,7 @@ defmodule ReqLLM.Providers.ElevenLabsTest do
                  provider_options: [stability: 0.5, similarity_boost: 0.8]
                )
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["voice_settings"]["stability"] == 0.5
       assert body["voice_settings"]["similarity_boost"] == 0.8
     end
@@ -150,7 +150,7 @@ defmodule ReqLLM.Providers.ElevenLabsTest do
       assert {:ok, request} =
                ElevenLabs.prepare_request(:speech, model, "Hello", [])
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       refute Map.has_key?(body, "voice_settings")
     end
 

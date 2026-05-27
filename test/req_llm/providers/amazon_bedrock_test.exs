@@ -152,7 +152,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
       assert request.url.path =~ "/converse"
 
       # Verify the body is properly encoded
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
 
       # Verify system instruction
       assert body["system"] == [%{"text" => "You are a calculator"}]
@@ -231,7 +231,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
       refute request.url.path =~ "/converse"
 
       # Verify the body uses native Anthropic format (via delegation)
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
 
       # Native Anthropic format has different structure than Converse
       assert body["anthropic_version"] == "bedrock-2023-05-31"
@@ -575,7 +575,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:embedding, model, text, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["texts"] == ["Test embedding text"]
       assert body["input_type"] == "search_document"
       assert body["embedding_types"] == ["float"]
@@ -592,7 +592,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:embedding, model, texts, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["texts"] == ["First text", "Second text", "Third text"]
     end
 
@@ -608,7 +608,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:embedding, model, text, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["input_type"] == "search_query"
     end
 
@@ -624,7 +624,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:embedding, model, text, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["embedding_types"] == ["float", "int8"]
     end
 
@@ -640,7 +640,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:embedding, model, text, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["truncate"] == "RIGHT"
     end
   end
@@ -818,7 +818,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
       assert %Req.Request{} = request
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["service_tier"] == "priority"
     end
 
@@ -839,7 +839,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["service_tier"] == "flex"
     end
 
@@ -860,7 +860,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       refute Map.has_key?(body, "service_tier")
     end
 
@@ -880,7 +880,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       refute Map.has_key?(body, "service_tier")
     end
   end
@@ -904,7 +904,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["anthropic_beta"] == ["output-128k-2025-02-19"]
     end
 
@@ -919,7 +919,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       refute Map.has_key?(body, "anthropic_beta")
     end
 
@@ -935,7 +935,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["anthropic_beta"] == ["output-128k-2025-02-19", "another-beta-flag"]
     end
 
@@ -951,7 +951,7 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
 
       {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["anthropic_beta"] == ["output-128k-2025-02-19"]
     end
   end

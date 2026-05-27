@@ -103,7 +103,7 @@ defmodule ReqLLM.Providers.OpenAICodexTest do
       assert {"accept", "text/event-stream"} in request.headers
       assert {"openai-beta", "responses=experimental"} in request.headers
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
 
       assert body["instructions"] == "You are a mining analyst.\n\nUse bullet points."
       assert body["model"] == "gpt-5.3-codex-spark"
@@ -203,7 +203,7 @@ defmodule ReqLLM.Providers.OpenAICodexTest do
           nil
         )
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
 
       refute Map.has_key?(body, "previous_response_id")
       assert body["store"] == false
@@ -236,7 +236,7 @@ defmodule ReqLLM.Providers.OpenAICodexTest do
           nil
         )
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
 
       refute Map.has_key?(body, "previous_response_id")
       assert body["store"] == false
@@ -261,7 +261,7 @@ defmodule ReqLLM.Providers.OpenAICodexTest do
           nil
         )
 
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
 
       refute Map.has_key?(body, "previous_response_id")
       assert body["store"] == false

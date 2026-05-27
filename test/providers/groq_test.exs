@@ -129,9 +129,9 @@ defmodule ReqLLM.Providers.GroqTest do
       # Test the encode_body function directly
       updated_request = Groq.encode_body(mock_request)
 
-      assert is_binary(updated_request.body)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert is_binary(IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(updated_request)))
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "llama-3.1-8b-instant"
       assert is_list(decoded["messages"])
@@ -168,8 +168,8 @@ defmodule ReqLLM.Providers.GroqTest do
       }
 
       updated_request = Groq.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -206,8 +206,8 @@ defmodule ReqLLM.Providers.GroqTest do
       }
 
       updated_request = Groq.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
 
@@ -243,8 +243,8 @@ defmodule ReqLLM.Providers.GroqTest do
         }
 
         updated_request = Groq.encode_body(mock_request)
-        assert_no_duplicate_json_keys(updated_request.body)
-        decoded = Jason.decode!(updated_request.body)
+        assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
         assert is_list(decoded["tools"])
         assert decoded["tool_choice"] == to_string(tool_choice)
@@ -267,7 +267,7 @@ defmodule ReqLLM.Providers.GroqTest do
       }
 
       updated_request = Groq.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["response_format"] == %{"type" => "json_object"}
     end
@@ -296,7 +296,7 @@ defmodule ReqLLM.Providers.GroqTest do
         options = [context: context, model: model.model, stream: false] ++ provider_opts
         mock_request = %Req.Request{options: options}
         updated_request = Groq.encode_body(mock_request)
-        decoded = Jason.decode!(updated_request.body)
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
         assertion.(decoded)
       end
     end
@@ -327,7 +327,7 @@ defmodule ReqLLM.Providers.GroqTest do
         full_options = [context: context, model: model.model, stream: false] ++ options
         mock_request = %Req.Request{options: full_options}
         updated_request = Groq.encode_body(mock_request)
-        decoded = Jason.decode!(updated_request.body)
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
         assertion.(decoded)
       end
     end

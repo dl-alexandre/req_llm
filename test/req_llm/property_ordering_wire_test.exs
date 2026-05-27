@@ -38,10 +38,11 @@ defmodule ReqLLM.PropertyOrderingWireTest do
 
       request = build_responses_request(provider_options: [response_format: response_format])
       encoded = ResponsesAPI.encode_body(request)
+      json = ReqLLM.Test.Helpers.json_iodata(encoded)
 
-      assert_no_property_ordering(encoded.body)
+      assert_no_property_ordering(json)
 
-      assert ordered_prop_keys(encoded.body, ["text", "format", "schema", "properties"]) ==
+      assert ordered_prop_keys(json, ["text", "format", "schema", "properties"]) ==
                @expected_order
     end
   end
@@ -78,11 +79,12 @@ defmodule ReqLLM.PropertyOrderingWireTest do
       }
 
       encoded = ChatAPI.encode_body(request)
+      json = ReqLLM.Test.Helpers.json_iodata(encoded)
 
-      assert_no_property_ordering(encoded.body)
+      assert_no_property_ordering(json)
 
       assert ordered_prop_keys(
-               encoded.body,
+               json,
                ["response_format", "json_schema", "schema", "properties"]
              ) == @expected_order
     end
@@ -114,10 +116,11 @@ defmodule ReqLLM.PropertyOrderingWireTest do
       }
 
       updated = Anthropic.encode_body(mock_request)
+      json = ReqLLM.Test.Helpers.json_iodata(updated)
 
-      assert_no_property_ordering(updated.body)
+      assert_no_property_ordering(json)
 
-      assert ordered_prop_keys(updated.body, ["output_format", "schema", "properties"]) ==
+      assert ordered_prop_keys(json, ["output_format", "schema", "properties"]) ==
                @expected_order
     end
   end
@@ -146,11 +149,12 @@ defmodule ReqLLM.PropertyOrderingWireTest do
       }
 
       encoded = ReqLLM.Provider.Defaults.encode_body_from_map(request, body)
+      json = ReqLLM.Test.Helpers.json_iodata(encoded)
 
-      assert_no_property_ordering(encoded.body)
+      assert_no_property_ordering(json)
 
       assert ordered_prop_keys(
-               encoded.body,
+               json,
                ["response_format", "json_schema", "schema", "properties"]
              ) == @expected_order
     end
@@ -184,11 +188,12 @@ defmodule ReqLLM.PropertyOrderingWireTest do
       }
 
       encoded = ReqLLM.Provider.Defaults.encode_body_from_map(request, body)
+      json = ReqLLM.Test.Helpers.json_iodata(encoded)
 
-      assert_no_property_ordering(encoded.body)
+      assert_no_property_ordering(json)
 
       assert ordered_prop_keys(
-               encoded.body,
+               json,
                ["response_format", "json_schema", "schema", "properties"]
              ) == @expected_order
     end

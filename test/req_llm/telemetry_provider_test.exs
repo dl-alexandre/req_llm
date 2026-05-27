@@ -333,7 +333,9 @@ defmodule ReqLLM.TelemetryProviderTest do
         end
 
       encode_step ->
-        encode_step.(request)
+        request
+        |> encode_step.()
+        |> Req.Steps.encode_body()
     end
   end
 end

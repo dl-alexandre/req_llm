@@ -80,7 +80,7 @@ defmodule ReqLLM.Providers.OllamaTest do
         )
 
       encoded = Ollama.encode_body(request)
-      body = Jason.decode!(encoded.body)
+      body = ReqLLM.Test.Helpers.json_body(encoded)
 
       assert body["response_format"]["type"] == "json_schema"
       assert body["response_format"]["json_schema"]["name"] == "structured_output"

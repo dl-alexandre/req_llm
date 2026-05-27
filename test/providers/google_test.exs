@@ -241,8 +241,8 @@ defmodule ReqLLM.Providers.GoogleTest do
       # Test the encode_body function directly
       updated_request = Google.encode_body(mock_request)
 
-      assert is_binary(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert is_binary(IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(updated_request)))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Should have Google's structure
       assert is_list(decoded["contents"])
@@ -289,7 +289,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -343,7 +343,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
       [tool_def] = decoded["tools"]
       [function_def] = tool_def["functionDeclarations"]
       parameters = function_def["parameters"]
@@ -373,7 +373,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Ensure both tools and toolConfig are completely omitted when tools is empty
       refute Map.has_key?(decoded, "tools"), "tools array should be omitted"
@@ -417,7 +417,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_parts =
         decoded["contents"]
@@ -471,7 +471,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_user_msg =
         decoded["contents"]
@@ -550,7 +550,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_user_msg =
         decoded["contents"]
@@ -612,7 +612,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_user_msg =
         decoded["contents"]
@@ -657,7 +657,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       function_call_parts =
         decoded["contents"]
@@ -696,7 +696,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [function_call_part] =
         decoded["contents"]
@@ -730,7 +730,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Check safety settings
       assert decoded["safetySettings"] == safety_settings
@@ -755,7 +755,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       thinking_config = decoded["generationConfig"]["thinkingConfig"]
       assert thinking_config["thinkingLevel"] == "medium"
@@ -776,7 +776,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       thinking_config = decoded["generationConfig"]["thinkingConfig"]
       assert thinking_config["thinkingBudget"] == 8_192
@@ -813,7 +813,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Check embedding-specific structure
       assert decoded["model"] == "models/gemini-embedding-001"
@@ -839,7 +839,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # labels must be top-level, not nested in generationConfig
       assert decoded["labels"] == labels
@@ -859,7 +859,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       refute Map.has_key?(decoded, "labels")
     end
@@ -883,7 +883,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["labels"] == labels
     end
@@ -904,7 +904,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -927,7 +927,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -962,7 +962,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 2
@@ -987,7 +987,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 2
@@ -1866,7 +1866,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["generationConfig"]["responseMimeType"] == "application/json"
       assert decoded["generationConfig"]["candidateCount"] == 1
@@ -1894,7 +1894,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       response_schema = decoded["generationConfig"]["responseSchema"]
       assert response_schema["type"] == "OBJECT"
@@ -1923,7 +1923,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       response_json_schema = decoded["generationConfig"]["responseJsonSchema"]
       assert response_json_schema["type"] == "object"
@@ -1950,7 +1950,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       response_json_schema = decoded["generationConfig"]["responseJsonSchema"]
       assert response_json_schema["type"] == "object"
@@ -2033,7 +2033,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       parts = user_msg["parts"]
@@ -2071,7 +2071,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2106,7 +2106,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2139,7 +2139,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2170,7 +2170,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2200,7 +2200,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [_text_part, part] = user_msg["parts"]
@@ -2231,7 +2231,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2274,7 +2274,7 @@ defmodule ReqLLM.Providers.GoogleTest do
         }
 
         updated_request = Google.encode_body(mock_request)
-        decoded = Jason.decode!(updated_request.body)
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
         [user_msg] = decoded["contents"]
         [part] = user_msg["parts"]
@@ -2296,7 +2296,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2319,7 +2319,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2351,7 +2351,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2383,7 +2383,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2415,7 +2415,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2447,7 +2447,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_msg] = decoded["contents"]
       [part] = user_msg["parts"]
@@ -2586,7 +2586,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["contents"])
       assert length(decoded["contents"]) == 2
@@ -2640,7 +2640,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       log =
         capture_log(fn ->
           updated_request = Google.encode_body(mock_request)
-          decoded = Jason.decode!(updated_request.body)
+          decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
           [model_msg] = decoded["contents"]
           parts = model_msg["parts"]
@@ -2761,7 +2761,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
       contents = decoded["contents"]
 
       tool_result_entries =
@@ -2800,7 +2800,7 @@ defmodule ReqLLM.Providers.GoogleTest do
       }
 
       updated_request = Google.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
       contents = decoded["contents"]
 
       user_entries = Enum.filter(contents, &(&1["role"] == "user"))

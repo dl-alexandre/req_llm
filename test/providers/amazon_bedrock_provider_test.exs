@@ -89,7 +89,7 @@ defmodule ReqLLM.Providers.AmazonBedrockProviderTest do
       assert request.method == :post
 
       # Check that body contains proper Anthropic format
-      body = Jason.decode!(request.body)
+      body = ReqLLM.Test.Helpers.json_body(request)
       assert body["anthropic_version"] == "bedrock-2023-05-31"
       assert body["max_tokens"] == 100
       assert body["temperature"] == 0.7

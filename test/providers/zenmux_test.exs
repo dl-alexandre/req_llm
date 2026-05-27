@@ -81,8 +81,8 @@ defmodule ReqLLM.Providers.ZenmuxTest do
       }
 
       updated_request = Zenmux.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "xiaomi/mimo-v2-flash"
       assert is_list(decoded["messages"])
@@ -140,8 +140,8 @@ defmodule ReqLLM.Providers.ZenmuxTest do
       }
 
       updated_request = Zenmux.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["provider"] == %{"routing" => %{"type" => "priority"}}
       assert decoded["model_routing_config"] == %{"preference" => "fastest"}
@@ -161,8 +161,8 @@ defmodule ReqLLM.Providers.ZenmuxTest do
       }
 
       updated_request = Zenmux.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["stream_options"] == %{"include_usage" => true}
     end
@@ -187,7 +187,7 @@ defmodule ReqLLM.Providers.ZenmuxTest do
       }
 
       updated_request = Zenmux.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["tool_choice"] == %{
                "type" => "function",
@@ -221,8 +221,8 @@ defmodule ReqLLM.Providers.ZenmuxTest do
         }
 
         updated_request = Zenmux.encode_body(mock_request)
-        assert_no_duplicate_json_keys(updated_request.body)
-        decoded = Jason.decode!(updated_request.body)
+        assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
         assert is_list(decoded["tools"])
         assert decoded["tool_choice"] == to_string(tool_choice)

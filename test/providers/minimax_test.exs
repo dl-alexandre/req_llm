@@ -129,7 +129,7 @@ defmodule ReqLLM.Providers.MinimaxTest do
       }
 
       encoded_request = Minimax.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       assert decoded["model"] == "MiniMax-M2.7"
       assert decoded["max_completion_tokens"] == 256
@@ -149,7 +149,7 @@ defmodule ReqLLM.Providers.MinimaxTest do
       }
 
       encoded_request = Minimax.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       assert decoded["reasoning_split"] == false
     end
@@ -186,7 +186,7 @@ defmodule ReqLLM.Providers.MinimaxTest do
       }
 
       encoded_request = Minimax.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
       assistant = Enum.at(decoded["messages"], 1)
 
       assert [

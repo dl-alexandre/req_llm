@@ -589,8 +589,8 @@ defmodule ReqLLM.Providers.XAITest do
       }
 
       updated_request = XAI.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "grok-3"
       assert is_list(decoded["messages"])
@@ -621,8 +621,8 @@ defmodule ReqLLM.Providers.XAITest do
       }
 
       updated_request = XAI.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert decoded["tool_choice"]["function"]["name"] == "test_tool"
@@ -642,8 +642,8 @@ defmodule ReqLLM.Providers.XAITest do
       }
 
       updated_request = XAI.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["response_format"] == %{"type" => "json_object"}
     end
@@ -664,8 +664,8 @@ defmodule ReqLLM.Providers.XAITest do
       }
 
       updated_request = XAI.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["parallel_tool_calls"] == false
       assert decoded["max_completion_tokens"] == 1024

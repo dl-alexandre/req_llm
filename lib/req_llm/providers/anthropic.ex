@@ -365,7 +365,7 @@ defmodule ReqLLM.Providers.Anthropic do
     )
     |> ReqLLM.Step.Error.attach()
     |> ReqLLM.Step.Retry.attach(user_opts)
-    |> Req.Request.append_request_steps(llm_encode_body: &encode_body/1)
+    |> Req.Request.prepend_request_steps(llm_encode_body: &encode_body/1)
     |> Req.Request.append_response_steps(llm_decode_response: &decode_response/1)
     |> ReqLLM.Step.Usage.attach(model)
     |> ReqLLM.Step.Telemetry.attach(model, user_opts)
@@ -396,9 +396,8 @@ defmodule ReqLLM.Providers.Anthropic do
       |> build_request_body(model_name, opts)
       |> shape_subscription_body(request)
 
-    json_body = body |> ReqLLM.Schema.apply_property_ordering() |> Jason.encode!()
-
-    %{request | body: json_body}
+    request
+    |> put_in([Access.key!(:options), :json], ReqLLM.Schema.apply_property_ordering(body))
   end
 
   @impl ReqLLM.Provider

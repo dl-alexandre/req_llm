@@ -145,8 +145,8 @@ defmodule ReqLLM.Providers.VLLMTest do
 
       updated_request = VLLM.encode_body(mock_request)
 
-      assert is_binary(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert is_binary(IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(updated_request)))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "test-model"
       assert is_list(decoded["messages"])
@@ -177,7 +177,7 @@ defmodule ReqLLM.Providers.VLLMTest do
       }
 
       updated_request = VLLM.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1

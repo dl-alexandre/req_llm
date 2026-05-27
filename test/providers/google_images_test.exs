@@ -35,7 +35,7 @@ defmodule ReqLLM.Providers.GoogleImagesTest do
       )
 
     encoded = Google.encode_body(request)
-    body = Jason.decode!(encoded.body)
+    body = ReqLLM.Test.Helpers.json_body(encoded)
 
     assert get_in(body, ["generationConfig", "responseModalities"]) == nil
     assert get_in(body, ["generationConfig", "imageConfig", "aspectRatio"]) == "1:1"
@@ -64,7 +64,7 @@ defmodule ReqLLM.Providers.GoogleImagesTest do
     assert request.url.path == "/models/imagen-4.0-generate-001:predict"
 
     encoded = Google.encode_body(request)
-    body = Jason.decode!(encoded.body)
+    body = ReqLLM.Test.Helpers.json_body(encoded)
 
     assert body["instances"] == [%{"prompt" => "A cat in space"}]
     assert get_in(body, ["parameters", "sampleCount"]) == 2
@@ -106,7 +106,7 @@ defmodule ReqLLM.Providers.GoogleImagesTest do
       )
 
     encoded = Google.encode_body(request)
-    body = Jason.decode!(encoded.body)
+    body = ReqLLM.Test.Helpers.json_body(encoded)
 
     assert is_nil(body["generationConfig"])
   end
@@ -123,7 +123,7 @@ defmodule ReqLLM.Providers.GoogleImagesTest do
       )
 
     encoded = Google.encode_body(request)
-    body = Jason.decode!(encoded.body)
+    body = ReqLLM.Test.Helpers.json_body(encoded)
 
     assert request.options[:response_modalities] == ["IMAGE"]
     assert get_in(body, ["generationConfig", "responseModalities"]) == ["IMAGE"]
@@ -141,7 +141,7 @@ defmodule ReqLLM.Providers.GoogleImagesTest do
       )
 
     encoded = Google.encode_body(request)
-    body = Jason.decode!(encoded.body)
+    body = ReqLLM.Test.Helpers.json_body(encoded)
 
     assert request.options[:response_modalities] == ["TEXT", "IMAGE"]
     assert get_in(body, ["generationConfig", "responseModalities"]) == ["TEXT", "IMAGE"]

@@ -25,7 +25,7 @@ defmodule ReqLLM.Providers.GoogleRoleFixTest do
 
       # Call the encode_body function to get the Gemini-formatted body
       updated_request = Google.encode_body(request)
-      body = Jason.decode!(updated_request.body)
+      body = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Check that the contents have the correct roles
       contents = body["contents"]
@@ -65,7 +65,7 @@ defmodule ReqLLM.Providers.GoogleRoleFixTest do
       }
 
       updated_request = Google.encode_body(request)
-      body = Jason.decode!(updated_request.body)
+      body = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # System instruction should be separate
       assert body["systemInstruction"]["parts"] == [%{"text" => "You are a helpful assistant"}]
@@ -94,7 +94,7 @@ defmodule ReqLLM.Providers.GoogleRoleFixTest do
       }
 
       updated_request = Google.encode_body(request)
-      body = Jason.decode!(updated_request.body)
+      body = ReqLLM.Test.Helpers.json_body(updated_request)
 
       contents = body["contents"]
 

@@ -134,7 +134,7 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
              }
 
       encoded_request = AlibabaCN.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       assert decoded["enable_search"] == true
       assert decoded["enable_thinking"] == true
@@ -155,7 +155,7 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
         )
 
       encoded_request = AlibabaCN.encode_body(request)
-      decoded = Jason.decode!(encoded_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(encoded_request)
 
       assert decoded["response_format"]["type"] == "json_schema"
       assert decoded["response_format"]["json_schema"]["name"] == "person_schema"
@@ -289,8 +289,8 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
       }
 
       updated_request = AlibabaCN.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "qwen-plus"
       assert is_list(decoded["messages"])
@@ -316,8 +316,8 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
       }
 
       updated_request = AlibabaCN.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["enable_search"] == true
       assert Map.has_key?(decoded, "search_options")
@@ -343,8 +343,8 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
       }
 
       updated_request = AlibabaCN.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["enable_thinking"] == true
       assert decoded["thinking_budget"] == 8192
@@ -364,8 +364,8 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
       }
 
       updated_request = AlibabaCN.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["top_k"] == 50
     end
@@ -394,8 +394,8 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
       }
 
       updated_request = AlibabaCN.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -427,7 +427,7 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
       }
 
       updated_request = AlibabaCN.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert decoded["enable_search"] == true
@@ -453,7 +453,7 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
           ReqLLM.Finch
         )
 
-      decoded = Jason.decode!(request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(request)
 
       assert decoded["enable_search"] == true
       assert decoded["enable_thinking"] == true
@@ -481,7 +481,7 @@ defmodule ReqLLM.Providers.AlibabaCNTest do
           ReqLLM.Finch
         )
 
-      decoded = Jason.decode!(request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(request)
 
       assert decoded["enable_search"] == true
       assert decoded["enable_thinking"] == true

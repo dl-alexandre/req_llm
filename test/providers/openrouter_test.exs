@@ -130,9 +130,9 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       # Test the encode_body function directly
       updated_request = OpenRouter.encode_body(mock_request)
 
-      assert is_binary(updated_request.body)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert is_binary(IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(updated_request)))
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "openai/gpt-4"
       assert is_list(decoded["messages"])
@@ -169,8 +169,8 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -207,8 +207,8 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
 
@@ -244,7 +244,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
         }
 
         updated_request = OpenRouter.encode_body(mock_request)
-        decoded = Jason.decode!(updated_request.body)
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
         assert is_list(decoded["tools"])
 
@@ -266,8 +266,8 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["stream"] == true
       assert decoded["stream_options"] == %{"include_usage" => true}
@@ -287,7 +287,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["usage"] == %{"include" => true}
     end
@@ -306,7 +306,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["plugins"] == [%{"id" => "web"}]
     end
@@ -325,7 +325,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["plugins"] == [%{"id" => "web"}, %{"id" => "code"}]
     end
@@ -352,7 +352,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [message] = decoded["messages"]
       [text_part, file_part] = message["content"]
@@ -389,7 +389,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [message] = decoded["messages"]
       [_, file_part] = message["content"]
@@ -453,7 +453,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["response_format"] == %{"type" => "json_object"}
     end
@@ -488,7 +488,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
         }
 
         updated_request = OpenRouter.encode_body(mock_request)
-        decoded = Jason.decode!(updated_request.body)
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
         assertion.(decoded)
       end
     end
@@ -930,7 +930,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "openai/text-embedding-3-small"
       assert decoded["input"] == "Hello"
@@ -975,7 +975,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["models"] == ["openai/gpt-4", "anthropic/claude-3-haiku"]
       assert decoded["route"] == "fallback"
@@ -997,7 +997,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["transforms"] == transforms
     end
@@ -1023,7 +1023,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["top_k"] == 40
       assert decoded["repetition_penalty"] == 1.05
@@ -1159,7 +1159,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded_body = Jason.decode!(updated_request.body)
+      decoded_body = ReqLLM.Test.Helpers.json_body(updated_request)
 
       messages = decoded_body["messages"]
       assistant_message = Enum.find(messages, fn msg -> msg["role"] == "assistant" end)
@@ -1223,7 +1223,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded_body = Jason.decode!(updated_request.body)
+      decoded_body = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Step 4: Verify reasoning_details was preserved exactly
       messages = decoded_body["messages"]
@@ -1259,7 +1259,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded_body = Jason.decode!(updated_request.body)
+      decoded_body = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # Empty array should not be included (cleaner)
       assistant_message = List.first(decoded_body["messages"])
@@ -1372,7 +1372,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       log =
         capture_log(fn ->
           updated_request = OpenRouter.encode_body(mock_request)
-          decoded_body = Jason.decode!(updated_request.body)
+          decoded_body = ReqLLM.Test.Helpers.json_body(updated_request)
 
           assistant_message =
             Enum.find(decoded_body["messages"], fn msg -> msg["role"] == "assistant" end)
@@ -1416,7 +1416,7 @@ defmodule ReqLLM.Providers.OpenRouterTest do
       }
 
       updated_request = OpenRouter.encode_body(mock_request)
-      decoded_body = Jason.decode!(updated_request.body)
+      decoded_body = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assistant_message =
         Enum.find(decoded_body["messages"], fn msg -> msg["role"] == "assistant" end)

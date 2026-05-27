@@ -146,7 +146,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
         |> Req.Request.put_private(:req_llm_claude_subscription?, true)
 
       updated_request = Anthropic.encode_body(request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [billing_block, identity_block, original_system_block] = decoded["system"]
 
@@ -280,7 +280,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       assert "oauth-2025-04-20" in features
       assert "interleaved-thinking-2025-05-14" in features
 
-      decoded = request |> Anthropic.encode_body() |> Map.fetch!(:body) |> Jason.decode!()
+      decoded = request |> Anthropic.encode_body() |> ReqLLM.Test.Helpers.json_body()
 
       assert decoded["model"] == "claude-sonnet-4-5-20250929"
       assert decoded["max_tokens"] == 64
@@ -406,7 +406,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
 
       {:ok, request} = Anthropic.prepare_request(:object, model, context, compiled_schema: schema)
 
-      body = request |> Anthropic.encode_body() |> Map.fetch!(:body) |> Jason.decode!()
+      body = request |> Anthropic.encode_body() |> ReqLLM.Test.Helpers.json_body()
       assert body["max_tokens"] == model.limits.output
     end
 
@@ -462,7 +462,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       messages = decoded["messages"]
 
@@ -510,7 +510,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_result_msg = List.last(decoded["messages"])
       [tool_result_block] = tool_result_msg["content"]
@@ -554,7 +554,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [user_message] = decoded["messages"]
       [_text_block, document_block, image_block] = user_message["content"]
@@ -595,8 +595,8 @@ defmodule ReqLLM.Providers.AnthropicTest do
       # Test the encode_body function directly
       updated_request = Anthropic.encode_body(mock_request)
 
-      assert is_binary(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert is_binary(IO.iodata_to_binary(ReqLLM.Test.Helpers.json_iodata(updated_request)))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["model"] == "claude-sonnet-4-5-20250929"
       assert is_list(decoded["messages"])
@@ -640,7 +640,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -675,7 +675,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # :required should be normalized to %{type: "any"} for Anthropic
       assert decoded["tool_choice"] == %{"type" => "any"}
@@ -704,7 +704,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # :auto should be normalized to %{type: "auto"} for Anthropic
       assert decoded["tool_choice"] == %{"type" => "auto"}
@@ -733,7 +733,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       # {:tool, name} should be normalized to %{type: "tool", name: "..."} for Anthropic
       assert decoded["tool_choice"] == %{"type" => "tool", "name" => "test_tool"}
@@ -774,7 +774,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_result_msg = List.last(decoded["messages"])
       [tool_result_block] = tool_result_msg["content"]
@@ -825,7 +825,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_result_msg = List.last(decoded["messages"])
       [tool_result_block] = tool_result_msg["content"]
@@ -869,7 +869,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       tool_result_msg = List.last(decoded["messages"])
       [tool_result_block] = tool_result_msg["content"]
@@ -988,7 +988,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
       messages = decoded["messages"]
 
       assistant_block =
@@ -1030,7 +1030,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
       messages = decoded["messages"]
 
       tool_use_block =
@@ -1469,7 +1469,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [encoded_tool] = decoded["tools"]
       assert encoded_tool["defer_loading"] == true
@@ -1497,7 +1497,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -1528,7 +1528,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [web_fetch_tool] = decoded["tools"]
       assert web_fetch_tool["max_content_tokens"] == 50_000
@@ -1551,7 +1551,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [web_fetch_tool] = decoded["tools"]
       assert web_fetch_tool["type"] == "web_fetch_20260209"
@@ -1584,7 +1584,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert length(decoded["tools"]) == 2
       [regular_tool, web_fetch_tool] = decoded["tools"]
@@ -1611,7 +1611,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert length(decoded["tools"]) == 2
       tool_types = Enum.map(decoded["tools"], & &1["type"])
@@ -1737,7 +1737,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 1
@@ -1776,7 +1776,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [web_search_tool] = decoded["tools"]
       assert web_search_tool["type"] == "web_search_20250305"
@@ -1807,7 +1807,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       [web_search_tool] = decoded["tools"]
       assert web_search_tool["type"] == "web_search_20250305"
@@ -1842,7 +1842,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
       }
 
       updated_request = Anthropic.encode_body(mock_request)
-      decoded = Jason.decode!(updated_request.body)
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert is_list(decoded["tools"])
       assert length(decoded["tools"]) == 2

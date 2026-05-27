@@ -28,7 +28,7 @@ defmodule ReqLLM.Providers.OpenAIImagesTest do
       )
 
     encoded = ImagesAPI.encode_body(request)
-    body = Jason.decode!(encoded.body)
+    body = ReqLLM.Test.Helpers.json_body(encoded)
 
     assert body["model"] == "gpt-image-1"
     assert body["prompt"] == "A lighthouse in a storm"
@@ -50,7 +50,7 @@ defmodule ReqLLM.Providers.OpenAIImagesTest do
       )
 
     encoded = ImagesAPI.encode_body(request)
-    body = Jason.decode!(encoded.body)
+    body = ReqLLM.Test.Helpers.json_body(encoded)
 
     assert body["model"] == "dall-e-3"
     assert body["response_format"] == "b64_json"

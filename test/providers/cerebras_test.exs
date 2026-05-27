@@ -34,8 +34,8 @@ defmodule ReqLLM.Providers.CerebrasTest do
         }
 
         updated_request = Cerebras.encode_body(mock_request)
-        assert_no_duplicate_json_keys(updated_request.body)
-        decoded = Jason.decode!(updated_request.body)
+        assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+        decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
         assert is_list(decoded["tools"])
         assert decoded["tool_choice"] == to_string(tool_choice)
@@ -67,8 +67,8 @@ defmodule ReqLLM.Providers.CerebrasTest do
       }
 
       updated_request = Cerebras.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["tool_choice"] == %{
                "type" => "function",
@@ -101,8 +101,8 @@ defmodule ReqLLM.Providers.CerebrasTest do
       }
 
       updated_request = Cerebras.encode_body(mock_request)
-      assert_no_duplicate_json_keys(updated_request.body)
-      decoded = Jason.decode!(updated_request.body)
+      assert_no_duplicate_json_keys(ReqLLM.Test.Helpers.json_iodata(updated_request))
+      decoded = ReqLLM.Test.Helpers.json_body(updated_request)
 
       assert decoded["parallel_tool_calls"] == false
     end

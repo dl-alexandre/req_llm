@@ -10,16 +10,16 @@
 
 > **Join the community!** Come chat about building AI tools with Elixir and coding Elixir with LLMs in [The Swarm: Elixir AI Collective](https://jido.run/discord) Discord server.
 
-A [Req](https://github.com/wojtekmach/req)-based package to call LLM APIs that standardizes the API calls and responses for LLM providers.
+A [Req](https://github.com/wojtekmach/req)- and [Finch](https://github.com/sneako/finch)-backed package to call LLM APIs that standardizes requests and responses across providers.
 
 ## Why Req LLM?
 
 LLM APIs are inconsistent. ReqLLM provides a unified, idiomatic Elixir interface with standardized requests and responses across providers.
 
-**Two-layer architecture:**
+**Unified architecture:**
 
-- **High-level API** – Vercel AI SDK-inspired functions (`generate_text/3`, `stream_text/3`, `generate_object/4` and more) that work uniformly across providers. Standard features, minimal configuration.
-- **Low-level API** – Direct Req plugin access for full HTTP control. Built around OpenAI Chat Completions baseline with provider-specific callbacks for non-compatible APIs (e.g., Anthropic).
+- **High-level API** – Vercel AI SDK-inspired functions (`generate_text/3`, `stream_text/3`, `generate_object/4` and more) that normalize requests and responses across providers.
+- **Provider transports** – Req powers request/response calls; Finch powers streaming. Provider callbacks translate model metadata, options, bodies, and responses behind the same public API.
 
 **Model Support Snapshot**
 
@@ -150,9 +150,10 @@ usage = ReqLLM.StreamResponse.usage(response)
   - Multi-modal content parts (text, image URL, tool call, binary)
   - All structs implement `Jason.Encoder` for simple persistence / inspection
 
-- **Two client layers**
-  - Low-level Req plugin with full HTTP control (`Provider.prepare_request/4`, `attach/3`)
+- **Unified client surface**
   - High-level Vercel-AI style helpers (`generate_text/3`, `stream_text/3`, `generate_object/4`, bang variants)
+  - Req-backed request/response calls and Finch-backed streaming behind the same provider abstraction
+  - Advanced Req request customization available for non-streaming use cases
 
 - **Structured object generation**
   - `generate_object/4` renders JSON-compatible Elixir maps validated by a NimbleOptions-compiled schema
@@ -430,9 +431,9 @@ Providers implement the `ReqLLM.Provider` behavior with functions like `encode_b
 
 See the [Adding a Provider Guide](guides/adding_a_provider.md) for detailed implementation instructions.
 
-## Lower-Level Req Plugin API
+## Advanced Req Plugin API
 
-For advanced use cases, you can use ReqLLM providers directly as Req plugins. This is the canonical implementation used by `ReqLLM.generate_text/3`:
+For advanced non-streaming use cases, you can use ReqLLM providers directly as Req plugins. This is the canonical implementation used by `ReqLLM.generate_text/3`:
 
 ```elixir
 # The canonical pattern from ReqLLM.Generation.generate_text/3
@@ -457,7 +458,7 @@ custom_request =
 {:ok, response} = Req.request(custom_request)
 ```
 
-This approach gives you full control over the Req pipeline, allowing you to add custom middleware, modify requests, or integrate with existing Req-based applications. Native ReqLLM telemetry still applies to this low-level Req path, and it is the recommended observability surface if you also need streaming coverage.
+This approach gives you full control over the Req pipeline, allowing you to add custom middleware, modify requests, or integrate with existing Req-based applications. Streaming uses Finch through `stream_text/3`.
 
 ## Documentation
 

@@ -50,10 +50,10 @@ defmodule ReqLLM.Providers.Azure.Anthropic do
   Usage information is automatically included in streaming responses.
   """
 
+  alias ReqLLM.ModelHelpers
   alias ReqLLM.Providers.Anthropic
   alias ReqLLM.Providers.Anthropic.AdapterHelpers
   alias ReqLLM.Providers.Anthropic.PlatformReasoning
-  alias ReqLLM.ModelHelpers
 
   require Logger
 

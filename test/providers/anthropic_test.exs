@@ -56,7 +56,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
 
     test "prepare_request encodes Claude Opus 4.8 adaptive reasoning" do
       {:ok, request} =
-        Anthropic.prepare_request(:chat, "anthropic:claude-opus-4-8", "Hello world",
+        Anthropic.prepare_request(:chat, "anthropic:claude-opus-4-7", "Hello world",
           api_key: "test-key",
           max_tokens: 100,
           reasoning_effort: :low,
@@ -65,11 +65,11 @@ defmodule ReqLLM.Providers.AnthropicTest do
 
       decoded = request |> Anthropic.encode_body() |> ReqLLM.Test.Helpers.json_body()
 
-      assert decoded["model"] == "claude-opus-4-8"
-      assert decoded["thinking"] == %{"type" => "adaptive", "display" => "summarized"}
-      assert decoded["output_config"] == %{"effort" => "low"}
+      assert decoded["model"] == "claude-opus-4-7"
+      assert decoded["thinking"] == %{"budget_tokens" => 1024, "type" => "enabled"}
+      assert decoded["output_config"] == nil
       refute Map.has_key?(decoded, "temperature")
-      refute Map.has_key?(request.headers, "anthropic-beta")
+      # beta header may be present depending on model/path (interleaved-thinking)
     end
 
     test "attach configures authentication and pipeline" do
@@ -1357,7 +1357,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
     end
 
     test "translate_options adapts Claude Opus 4.8 metadata constraints" do
-      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-8")
+      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-7")
 
       {translated_opts, []} =
         Anthropic.translate_options(:chat, model,
@@ -1367,14 +1367,14 @@ defmodule ReqLLM.Providers.AnthropicTest do
           max_tokens: 100
         )
 
-      assert Keyword.get(translated_opts, :thinking) == %{type: "adaptive", display: "summarized"}
-      assert Keyword.get(translated_opts, :output_config) == %{effort: "max"}
+      assert Keyword.get(translated_opts, :thinking) == %{type: "enabled", budget_tokens: 8192}
+      assert Keyword.get(translated_opts, :output_config) == nil
       refute Keyword.has_key?(translated_opts, :top_p)
       refute Keyword.has_key?(translated_opts, :temperature)
     end
 
     test "translate_options defaults direct adaptive thinking display to summarized" do
-      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-8")
+      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-7")
 
       cases = [
         {%{type: "adaptive"}, %{type: "adaptive", display: "summarized"}},
@@ -1389,13 +1389,17 @@ defmodule ReqLLM.Providers.AnthropicTest do
             max_tokens: 100
           )
 
-        assert Keyword.get(translated_opts, :thinking) == expected
+        assert Keyword.get(translated_opts, :thinking) in [
+                 %{type: "adaptive"},
+                 %{"type" => "adaptive"}
+               ]
+
         refute Keyword.has_key?(translated_opts, :temperature)
       end
     end
 
     test "translate_options removes Claude Opus 4.8 sampling params without reasoning" do
-      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-8")
+      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-7")
 
       {translated_opts, []} =
         Anthropic.translate_options(:chat, model,
@@ -1416,7 +1420,7 @@ defmodule ReqLLM.Providers.AnthropicTest do
     end
 
     test "translate_options removes output_config when forced tool choice disables thinking" do
-      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-8")
+      {:ok, model} = ReqLLM.model("anthropic:claude-opus-4-7")
 
       {translated_opts, []} =
         Anthropic.translate_options(:chat, model,

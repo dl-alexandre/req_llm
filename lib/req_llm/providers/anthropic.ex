@@ -1375,7 +1375,7 @@ defmodule ReqLLM.Providers.Anthropic do
   end
 
   defp put_reasoning_effort(opts, model, effort, reasoning_budget) do
-    if adaptive_thinking_required?(model) do
+    if ReqLLM.ModelHelpers.adaptive_thinking_required?(model) do
       opts
       |> Keyword.put(:thinking, %{type: "adaptive", display: "summarized"})
       |> put_output_effort(adaptive_effort(effort, model))
@@ -1391,7 +1391,7 @@ defmodule ReqLLM.Providers.Anthropic do
   end
 
   defp put_default_reasoning_effort(opts, model) do
-    if adaptive_thinking_required?(model) do
+    if ReqLLM.ModelHelpers.adaptive_thinking_required?(model) do
       opts
       |> Keyword.put(:thinking, %{type: "adaptive", display: "summarized"})
       |> put_output_effort(adaptive_effort(:default, model))
@@ -1404,7 +1404,7 @@ defmodule ReqLLM.Providers.Anthropic do
   end
 
   defp normalize_thinking_for_model(opts, model) do
-    if adaptive_thinking_required?(model) do
+    if ReqLLM.ModelHelpers.adaptive_thinking_required?(model) do
       case Keyword.get(opts, :thinking) do
         %{type: "enabled"} = thinking ->
           opts
@@ -1478,10 +1478,6 @@ defmodule ReqLLM.Providers.Anthropic do
     else
       "high"
     end
-  end
-
-  defp adaptive_thinking_required?(model) do
-    ReqLLM.ModelHelpers.adaptive_thinking_required?(model)
   end
 
   defp remove_model_unsupported_parameters(opts, model) do

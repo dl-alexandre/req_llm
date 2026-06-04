@@ -320,6 +320,25 @@ defmodule ReqLLM.ModelHelpersTest do
       refute ModelHelpers.adaptive_thinking_required?(model_none)
     end
 
+    test "returns false when adaptive supported but enabled omitted (sparse metadata, not explicit false)" do
+      model = %LLMDB.Model{
+        id: "anthropic:claude-opus-4-7",
+        provider: :anthropic,
+        extra: %{
+          "capabilities" => %{
+            "thinking" => %{
+              "types" => %{
+                "adaptive" => %{"supported" => true}
+                # enabled key omitted entirely
+              }
+            }
+          }
+        }
+      }
+
+      refute ModelHelpers.adaptive_thinking_required?(model)
+    end
+
     test "returns false for non-Model" do
       refute ModelHelpers.adaptive_thinking_required?(%{})
     end

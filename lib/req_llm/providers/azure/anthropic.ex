@@ -53,6 +53,7 @@ defmodule ReqLLM.Providers.Azure.Anthropic do
   alias ReqLLM.Providers.Anthropic
   alias ReqLLM.Providers.Anthropic.AdapterHelpers
   alias ReqLLM.Providers.Anthropic.PlatformReasoning
+  alias ReqLLM.ModelHelpers
 
   require Logger
 
@@ -298,9 +299,7 @@ defmodule ReqLLM.Providers.Azure.Anthropic do
     {reasoning_effort, opts} = Keyword.pop(opts, :reasoning_effort)
     {reasoning_budget, opts} = Keyword.pop(opts, :reasoning_token_budget)
 
-    has_reasoning =
-      get_in(model, [Access.key(:capabilities), Access.key(:reasoning), Access.key(:enabled)]) ==
-        true
+    has_reasoning = ModelHelpers.reasoning_enabled?(model)
 
     cond do
       has_reasoning && reasoning_budget && is_integer(reasoning_budget) ->

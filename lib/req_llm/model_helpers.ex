@@ -78,11 +78,12 @@ defmodule ReqLLM.ModelHelpers do
   end
 
   @doc """
-  Check if the model requires "adaptive" thinking (for certain Claude "thinking-only" models)
-  and does not support the standard "enabled" thinking type.
+  Check if the model supports only "adaptive" thinking (certain Claude "thinking-only" models
+  like Mythos Preview) and does not support the standard "enabled" thinking type (explicitly false).
 
-  Used to auto-enable adaptive thinking on platforms like Azure and Bedrock where
-  the direct Anthropic provider would set `type: "adaptive"`.
+  Used to select the correct `type: "adaptive"` form (with display summarized) on platforms
+  like Azure/Bedrock/Vertex, and to decide auto-injection in no-param fallback for models
+  that only support the adaptive form.
 
   ## Examples
 
@@ -97,9 +98,9 @@ defmodule ReqLLM.ModelHelpers do
       get_in(extra, ["capabilities", "thinking", "types", "adaptive", "supported"]) == true
 
     enabled_supported =
-      get_in(extra, ["capabilities", "thinking", "types", "enabled", "supported"]) == true
+      get_in(extra, ["capabilities", "thinking", "types", "enabled", "supported"])
 
-    adaptive_supported and not enabled_supported
+    adaptive_supported and enabled_supported == false
   end
 
   def adaptive_thinking_required?(_), do: false

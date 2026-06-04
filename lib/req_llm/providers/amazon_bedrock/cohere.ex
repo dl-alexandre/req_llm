@@ -64,6 +64,15 @@ defmodule ReqLLM.Providers.AmazonBedrock.Cohere do
   def embedding_response_schema, do: @embedding_response_schema
 
   @doc """
+  Preserve inference profile prefix for Cohere embedding models (e.g. cohere.embed-v4)
+  on Bedrock.
+
+  Inference profiles (cross-region etc.) require the prefixed model ID in the
+  Bedrock invoke URL, just like for other families.
+  """
+  def preserve_inference_profile?(_model_id), do: true
+
+  @doc """
   Formats text, images, or mixed content into Cohere embedding request format for Bedrock.
   """
   def format_embedding_request(_model_id, text, opts) do

@@ -739,16 +739,21 @@ defmodule ReqLLM.Providers.AmazonBedrock do
       cond do
         reasoning_budget && is_integer(reasoning_budget) ->
           # Explicit budget_tokens provided
-          PlatformReasoning.add_reasoning_to_additional_fields(opts, reasoning_budget)
+          PlatformReasoning.add_reasoning_to_additional_fields(opts, reasoning_budget, model)
 
         reasoning_effort && reasoning_effort != :none ->
           # Map effort to budget using canonical Anthropic mappings
           budget = Anthropic.map_reasoning_effort_to_budget(reasoning_effort)
-          PlatformReasoning.add_reasoning_to_additional_fields(opts, budget)
+          PlatformReasoning.add_reasoning_to_additional_fields(opts, budget, model)
 
         true ->
           # No reasoning params or :none (disable reasoning)
-          opts
+          # Still check if model requires adaptive thinking (for "thinking-only" models)
+          if ReqLLM.ModelHelpers.adaptive_thinking_required?(model) do
+            PlatformReasoning.add_reasoning_to_additional_fields(opts, nil, model)
+          else
+            opts
+          end
       end
     else
       # Not a Claude reasoning model, pass through

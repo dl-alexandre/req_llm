@@ -1481,8 +1481,7 @@ defmodule ReqLLM.Providers.Anthropic do
   end
 
   defp adaptive_thinking_required?(model) do
-    model_extra(model, [:capabilities, :thinking, :types, :adaptive, :supported]) == true and
-      model_extra(model, [:capabilities, :thinking, :types, :enabled, :supported]) == false
+    ReqLLM.ModelHelpers.adaptive_thinking_required?(model)
   end
 
   defp remove_model_unsupported_parameters(opts, model) do

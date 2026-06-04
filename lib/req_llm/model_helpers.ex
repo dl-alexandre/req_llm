@@ -76,4 +76,31 @@ defmodule ReqLLM.ModelHelpers do
     |> Enum.map(fn {name, _path} -> name end)
     |> Enum.sort()
   end
+
+  @doc """
+  Check if the model requires "adaptive" thinking (for certain Claude "thinking-only" models)
+  and does not support the standard "enabled" thinking type.
+
+  Used to auto-enable adaptive thinking on platforms like Azure and Bedrock where
+  the direct Anthropic provider would set `type: "adaptive"`.
+
+  ## Examples
+
+      iex> model = %LLMDB.Model{extra: %{"capabilities" => %{"thinking" => %{"types" => %{"adaptive" => %{"supported" => true}, "enabled" => %{"supported" => false}}}}}}
+      iex> ReqLLM.ModelHelpers.adaptive_thinking_required?(model)
+      true
+  """
+  def adaptive_thinking_required?(%LLMDB.Model{} = model) do
+    extra = model.extra || %{}
+
+    adaptive_supported =
+      get_in(extra, ["capabilities", "thinking", "types", "adaptive", "supported"]) == true
+
+    enabled_supported =
+      get_in(extra, ["capabilities", "thinking", "types", "enabled", "supported"]) == true
+
+    adaptive_supported and not enabled_supported
+  end
+
+  def adaptive_thinking_required?(_), do: false
 end

@@ -193,7 +193,7 @@ defmodule ReqLLM.Providers.GoogleVertex.Anthropic do
         reasoning_budget && is_integer(reasoning_budget) ->
           # Explicit budget_tokens provided
           opts
-          |> PlatformReasoning.add_reasoning_to_additional_fields(reasoning_budget)
+          |> PlatformReasoning.add_reasoning_to_additional_fields(reasoning_budget, model)
           |> ensure_min_max_tokens(reasoning_budget)
           |> Keyword.put(:temperature, 1.0)
 
@@ -202,13 +202,20 @@ defmodule ReqLLM.Providers.GoogleVertex.Anthropic do
           budget = Anthropic.map_reasoning_effort_to_budget(reasoning_effort)
 
           opts
-          |> PlatformReasoning.add_reasoning_to_additional_fields(budget)
+          |> PlatformReasoning.add_reasoning_to_additional_fields(budget, model)
           |> ensure_min_max_tokens(budget)
           |> Keyword.put(:temperature, 1.0)
 
         true ->
           # No reasoning params or :none (disable reasoning)
-          opts
+          # Still support adaptive for "thinking-only" models
+          if ReqLLM.ModelHelpers.adaptive_thinking_required?(model) do
+            opts
+            |> PlatformReasoning.add_reasoning_to_additional_fields(nil, model)
+            |> Keyword.put(:temperature, 1.0)
+          else
+            opts
+          end
       end
     else
       opts

@@ -277,4 +277,51 @@ defmodule ReqLLM.ModelHelpersTest do
       assert helpers == Enum.sort(helpers)
     end
   end
+
+  describe "adaptive_thinking_required?/1" do
+    test "returns true only when adaptive supported and enabled not supported" do
+      model = %LLMDB.Model{
+        id: "anthropic:claude-opus-4-7",
+        provider: :anthropic,
+        extra: %{
+          "capabilities" => %{
+            "thinking" => %{
+              "types" => %{
+                "adaptive" => %{"supported" => true},
+                "enabled" => %{"supported" => false}
+              }
+            }
+          }
+        }
+      }
+
+      assert ModelHelpers.adaptive_thinking_required?(model) == true
+    end
+
+    test "returns false when both supported or neither" do
+      model_both = %LLMDB.Model{
+        id: "test",
+        provider: :anthropic,
+        extra: %{
+          "capabilities" => %{
+            "thinking" => %{
+              "types" => %{
+                "adaptive" => %{"supported" => true},
+                "enabled" => %{"supported" => true}
+              }
+            }
+          }
+        }
+      }
+
+      refute ModelHelpers.adaptive_thinking_required?(model_both)
+
+      model_none = %LLMDB.Model{id: "test", provider: :anthropic, extra: %{}}
+      refute ModelHelpers.adaptive_thinking_required?(model_none)
+    end
+
+    test "returns false for non-Model" do
+      refute ModelHelpers.adaptive_thinking_required?(%{})
+    end
+  end
 end

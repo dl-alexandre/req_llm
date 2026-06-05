@@ -665,7 +665,10 @@ defmodule ReqLLM do
   end
 
   defp provider_atom_from_string(provider_name) when is_binary(provider_name) do
-    provider = String.to_existing_atom(provider_name)
+    provider =
+      provider_name
+      |> String.replace("-", "_")
+      |> String.to_existing_atom()
 
     case ReqLLM.provider(provider) do
       {:ok, _module} -> {:ok, provider}

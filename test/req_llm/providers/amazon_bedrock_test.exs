@@ -564,6 +564,22 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
       assert request.url.path =~ "/model/cohere.embed-english-v3/invoke"
     end
 
+    test "preserves inference profile prefix for Cohere embedding model" do
+      {:ok, model} = ReqLLM.model("amazon-bedrock:global.cohere.embed-v4:0")
+      text = "Hello, world!"
+
+      opts = [
+        access_key_id: "AKIATEST",
+        secret_access_key: "secretTEST",
+        region: "us-east-1"
+      ]
+
+      {:ok, request} = AmazonBedrock.prepare_request(:embedding, model, text, opts)
+
+      assert model.provider_model_id == "global.cohere.embed-v4:0"
+      assert request.url.path == "/model/global.cohere.embed-v4:0/invoke"
+    end
+
     test "includes text in Cohere format" do
       {:ok, model} = ReqLLM.model("amazon-bedrock:cohere.embed-english-v3")
       text = "Test embedding text"

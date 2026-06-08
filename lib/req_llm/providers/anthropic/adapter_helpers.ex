@@ -82,13 +82,11 @@ defmodule ReqLLM.Providers.Anthropic.AdapterHelpers do
   See: https://docs.claude.com/en/docs/build-with-claude/extended-thinking
   """
   def maybe_add_thinking(body, opts) do
-    # Check if additional_model_request_fields has thinking config
     thinking_config =
       get_in(opts, [:provider_options, :additional_model_request_fields, :thinking])
 
     tool_choice = opts[:tool_choice]
 
-    # Extended thinking doesn't work when tool_choice forces a specific tool
     forced_tool_choice? =
       case tool_choice do
         %{type: "tool", name: _} -> true
@@ -100,10 +98,27 @@ defmodule ReqLLM.Providers.Anthropic.AdapterHelpers do
       %{type: "enabled", budget_tokens: budget} when not forced_tool_choice? ->
         Map.put(body, :thinking, %{type: "enabled", budget_tokens: budget})
 
+      %{"type" => "enabled", "budget_tokens" => budget} when not forced_tool_choice? ->
+        Map.put(body, :thinking, %{type: "enabled", budget_tokens: budget})
+
+      %{type: "adaptive"} = thinking when not forced_tool_choice? ->
+        Map.put(body, :thinking, put_adaptive_display(thinking))
+
+      %{"type" => "adaptive"} = thinking when not forced_tool_choice? ->
+        Map.put(body, :thinking, put_adaptive_display(thinking))
+
       _ ->
         body
     end
   end
+
+  defp put_adaptive_display(%{display: _} = thinking), do: thinking
+  defp put_adaptive_display(%{"display" => _} = thinking), do: thinking
+
+  defp put_adaptive_display(%{"type" => _} = thinking),
+    do: Map.put(thinking, "display", "summarized")
+
+  defp put_adaptive_display(thinking), do: Map.put(thinking, :display, "summarized")
 
   @doc """
   Extract structured output from tool calls in response.

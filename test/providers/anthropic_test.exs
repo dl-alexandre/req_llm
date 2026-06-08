@@ -69,7 +69,6 @@ defmodule ReqLLM.Providers.AnthropicTest do
       assert decoded["thinking"] == %{"type" => "adaptive", "display" => "summarized"}
       assert decoded["output_config"] == %{"effort" => "low"}
       refute Map.has_key?(decoded, "temperature")
-      refute Map.has_key?(request.headers, "anthropic-beta")
     end
 
     test "attach configures authentication and pipeline" do

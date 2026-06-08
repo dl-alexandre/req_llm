@@ -220,8 +220,8 @@ defmodule ReqLLM.Providers.GoogleVertex.Anthropic do
   # Translate reasoning_effort/reasoning_token_budget to Vertex additionalModelRequestFields
   # Only for Claude models that support extended thinking
   defp maybe_translate_reasoning_params(model, opts) do
-    # Check if this model has reasoning capability
-    has_reasoning = ModelHelpers.reasoning_enabled?(model)
+    has_reasoning =
+      ModelHelpers.reasoning_enabled?(model) or ModelHelpers.adaptive_thinking_required?(model)
 
     if has_reasoning do
       {reasoning_effort, opts} = Keyword.pop(opts, :reasoning_effort)
@@ -229,23 +229,20 @@ defmodule ReqLLM.Providers.GoogleVertex.Anthropic do
 
       cond do
         reasoning_budget && is_integer(reasoning_budget) ->
-          # Explicit budget_tokens provided
           opts
-          |> PlatformReasoning.add_reasoning_to_additional_fields(reasoning_budget)
+          |> PlatformReasoning.add_reasoning_to_additional_fields(reasoning_budget, model)
           |> ensure_min_max_tokens(reasoning_budget)
           |> Keyword.put(:temperature, 1.0)
 
         reasoning_effort && reasoning_effort != :none ->
-          # Map effort to budget using canonical Anthropic mappings
           budget = Anthropic.map_reasoning_effort_to_budget(reasoning_effort)
 
           opts
-          |> PlatformReasoning.add_reasoning_to_additional_fields(budget)
+          |> PlatformReasoning.add_reasoning_to_additional_fields(budget, model)
           |> ensure_min_max_tokens(budget)
           |> Keyword.put(:temperature, 1.0)
 
         true ->
-          # No reasoning params or :none (disable reasoning)
           opts
       end
     else

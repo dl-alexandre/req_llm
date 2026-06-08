@@ -580,6 +580,58 @@ defmodule ReqLLM.Providers.GoogleVertex.GeminiTest do
     end
   end
 
+  describe "adaptive thinking for Claude on Vertex" do
+    test "prepared request includes adaptive thinking for sparse Opus platform metadata" do
+      model = %LLMDB.Model{
+        id: "claude-opus-4-7@20260414",
+        model: "claude-opus-4-7@20260414",
+        provider: :google_vertex_anthropic,
+        capabilities: %{chat: true, reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
+      }
+
+      {:ok, request} =
+        GoogleVertex.prepare_request(
+          :chat,
+          model,
+          "Hello",
+          access_token: "test-token",
+          project_id: "test-project",
+          region: "global",
+          max_tokens: 2000,
+          reasoning_effort: :high
+        )
+
+      body = request.options[:json]
+      assert body[:thinking] == %{type: "adaptive", display: "summarized"}
+      assert body[:temperature] == 1.0
+      assert body[:max_tokens] == 4297
+    end
+
+    test "prepared request does not auto-enable adaptive thinking" do
+      model = %LLMDB.Model{
+        id: "claude-opus-4-7@20260414",
+        model: "claude-opus-4-7@20260414",
+        provider: :google_vertex_anthropic,
+        capabilities: %{chat: true, reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
+      }
+
+      {:ok, request} =
+        GoogleVertex.prepare_request(
+          :chat,
+          model,
+          "Hello",
+          access_token: "test-token",
+          project_id: "test-project",
+          region: "global",
+          max_tokens: 2000
+        )
+
+      refute Map.has_key?(request.options[:json], :thinking)
+    end
+  end
+
   describe "option translation for Gemini thinking" do
     alias ReqLLM.Providers.GoogleVertex
 

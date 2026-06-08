@@ -728,9 +728,10 @@ defmodule ReqLLM.Providers.AmazonBedrock do
   defp maybe_translate_reasoning_params(model, opts) do
     model_id = model.provider_model_id || model.id
 
-    # Check if this is a Claude model with reasoning capability
     is_claude = String.contains?(model_id, "anthropic.claude")
-    has_reasoning = ModelHelpers.reasoning_enabled?(model)
+
+    has_reasoning =
+      ModelHelpers.reasoning_enabled?(model) or ModelHelpers.adaptive_thinking_required?(model)
 
     if is_claude and has_reasoning do
       {reasoning_effort, opts} = Keyword.pop(opts, :reasoning_effort)
@@ -738,25 +739,16 @@ defmodule ReqLLM.Providers.AmazonBedrock do
 
       cond do
         reasoning_budget && is_integer(reasoning_budget) ->
-          # Explicit budget_tokens provided
           PlatformReasoning.add_reasoning_to_additional_fields(opts, reasoning_budget, model)
 
         reasoning_effort && reasoning_effort != :none ->
-          # Map effort to budget using canonical Anthropic mappings
           budget = Anthropic.map_reasoning_effort_to_budget(reasoning_effort)
           PlatformReasoning.add_reasoning_to_additional_fields(opts, budget, model)
 
         true ->
-          # No reasoning params or :none (disable reasoning)
-          # Still check if model requires adaptive thinking (for "thinking-only" models)
-          if ReqLLM.ModelHelpers.adaptive_thinking_required?(model) do
-            PlatformReasoning.add_reasoning_to_additional_fields(opts, nil, model)
-          else
-            opts
-          end
+          opts
       end
     else
-      # Not a Claude reasoning model, pass through
       opts
     end
   end

@@ -299,7 +299,8 @@ defmodule ReqLLM.Providers.Azure.Anthropic do
     {reasoning_effort, opts} = Keyword.pop(opts, :reasoning_effort)
     {reasoning_budget, opts} = Keyword.pop(opts, :reasoning_token_budget)
 
-    has_reasoning = ModelHelpers.reasoning_enabled?(model)
+    has_reasoning =
+      ModelHelpers.reasoning_enabled?(model) or ModelHelpers.adaptive_thinking_required?(model)
 
     cond do
       has_reasoning && reasoning_budget && is_integer(reasoning_budget) ->
@@ -324,14 +325,7 @@ defmodule ReqLLM.Providers.Azure.Anthropic do
         opts
 
       true ->
-        # Check for adaptive thinking only models even without explicit params
-        if ReqLLM.ModelHelpers.adaptive_thinking_required?(model) do
-          opts
-          |> PlatformReasoning.add_reasoning_to_additional_fields(nil, model)
-          |> set_reasoning_temperature(model)
-        else
-          opts
-        end
+        opts
     end
   end
 

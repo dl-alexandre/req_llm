@@ -799,6 +799,60 @@ defmodule ReqLLM.Providers.AmazonBedrockTest do
     end
   end
 
+  describe "adaptive thinking for hosted Claude models" do
+    test "encodes adaptive thinking when sparse Opus platform metadata requests reasoning" do
+      model = %LLMDB.Model{
+        id: "anthropic.claude-opus-4-7-v1:0",
+        model: "anthropic.claude-opus-4-7-v1:0",
+        provider: :amazon_bedrock,
+        provider_model_id: "us.anthropic.claude-opus-4-7-v1:0",
+        capabilities: %{chat: true, reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
+      }
+
+      context = Context.new([Context.user("Hello")])
+
+      opts = [
+        access_key_id: "AKIATEST",
+        secret_access_key: "secretTEST",
+        region: "us-east-1",
+        max_tokens: 2000,
+        reasoning_effort: :high
+      ]
+
+      {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
+
+      body = ReqLLM.Test.Helpers.json_body(request)
+      assert body["thinking"] == %{"display" => "summarized", "type" => "adaptive"}
+      assert request.url.path == "/model/us.anthropic.claude-opus-4-7-v1:0/invoke"
+    end
+
+    test "does not auto-enable adaptive thinking without reasoning params" do
+      model = %LLMDB.Model{
+        id: "anthropic.claude-opus-4-7-v1:0",
+        model: "anthropic.claude-opus-4-7-v1:0",
+        provider: :amazon_bedrock,
+        provider_model_id: "us.anthropic.claude-opus-4-7-v1:0",
+        capabilities: %{chat: true, reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
+      }
+
+      context = Context.new([Context.user("Hello")])
+
+      opts = [
+        access_key_id: "AKIATEST",
+        secret_access_key: "secretTEST",
+        region: "us-east-1",
+        max_tokens: 2000
+      ]
+
+      {:ok, request} = AmazonBedrock.prepare_request(:chat, model, context, opts)
+
+      body = ReqLLM.Test.Helpers.json_body(request)
+      refute Map.has_key?(body, "thinking")
+    end
+  end
+
   describe "service_tier parameter" do
     test "includes service_tier in request body when specified" do
       System.put_env("AWS_ACCESS_KEY_ID", "AKIATEST")

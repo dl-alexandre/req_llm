@@ -43,7 +43,6 @@ defmodule ReqLLM.Providers.Anthropic.PlatformReasoning do
       # }
   """
   def add_reasoning_to_additional_fields(opts, budget_tokens, model \\ nil) do
-    # Get existing additional_model_request_fields from provider_options (if any)
     provider_opts = Keyword.get(opts, :provider_options, [])
 
     thinking =
@@ -57,7 +56,6 @@ defmodule ReqLLM.Providers.Anthropic.PlatformReasoning do
       Keyword.get(provider_opts, :additional_model_request_fields, %{})
       |> Map.put(:thinking, thinking)
 
-    # Put it back into provider_options
     updated_provider_opts =
       Keyword.put(provider_opts, :additional_model_request_fields, additional_fields)
 

@@ -279,9 +279,9 @@ defmodule ReqLLM.ModelHelpersTest do
   end
 
   describe "adaptive_thinking_required?/1" do
-    test "returns true only when adaptive supported and enabled not supported" do
+    test "returns true for string-keyed adaptive-only thinking metadata" do
       model = %LLMDB.Model{
-        id: "anthropic:claude-opus-4-7",
+        id: "claude-opus-4-7",
         provider: :anthropic,
         extra: %{
           "capabilities" => %{
@@ -295,7 +295,26 @@ defmodule ReqLLM.ModelHelpersTest do
         }
       }
 
-      assert ModelHelpers.adaptive_thinking_required?(model) == true
+      assert ModelHelpers.adaptive_thinking_required?(model)
+    end
+
+    test "returns true for atom-keyed adaptive-only thinking metadata" do
+      model = %LLMDB.Model{
+        id: "claude-opus-4-7",
+        provider: :anthropic,
+        extra: %{
+          capabilities: %{
+            thinking: %{
+              types: %{
+                adaptive: %{supported: true},
+                enabled: %{supported: false}
+              }
+            }
+          }
+        }
+      }
+
+      assert ModelHelpers.adaptive_thinking_required?(model)
     end
 
     test "returns false when both supported or neither" do
@@ -322,18 +341,63 @@ defmodule ReqLLM.ModelHelpersTest do
 
     test "returns false when adaptive supported but enabled omitted (sparse metadata, not explicit false)" do
       model = %LLMDB.Model{
-        id: "anthropic:claude-opus-4-7",
+        id: "test",
         provider: :anthropic,
         extra: %{
           "capabilities" => %{
             "thinking" => %{
               "types" => %{
                 "adaptive" => %{"supported" => true}
-                # enabled key omitted entirely
               }
             }
           }
         }
+      }
+
+      refute ModelHelpers.adaptive_thinking_required?(model)
+    end
+
+    test "derives sparse Bedrock Claude metadata from the native Anthropic catalog" do
+      model = %LLMDB.Model{
+        id: "anthropic.claude-opus-4-7-v1:0",
+        provider: :amazon_bedrock,
+        provider_model_id: "us.anthropic.claude-opus-4-7-v1:0",
+        capabilities: %{reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
+      }
+
+      assert ModelHelpers.adaptive_thinking_required?(model)
+    end
+
+    test "derives sparse Vertex Claude metadata from the native Anthropic catalog" do
+      model = %LLMDB.Model{
+        id: "claude-opus-4-7@20260414",
+        provider: :google_vertex_anthropic,
+        capabilities: %{reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
+      }
+
+      assert ModelHelpers.adaptive_thinking_required?(model)
+    end
+
+    test "derives sparse Azure Claude metadata from the native Anthropic catalog" do
+      model = %LLMDB.Model{
+        id: "claude-opus-4-7",
+        provider: :azure,
+        capabilities: %{reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
+      }
+
+      assert ModelHelpers.adaptive_thinking_required?(model)
+    end
+
+    test "returns false for hosted Claude models whose native catalog metadata supports enabled thinking" do
+      model = %LLMDB.Model{
+        id: "anthropic.claude-opus-4-1-20250805-v1:0",
+        provider: :amazon_bedrock,
+        provider_model_id: "us.anthropic.claude-opus-4-1-20250805-v1:0",
+        capabilities: %{reasoning: %{enabled: true}},
+        extra: %{family: "claude-opus"}
       }
 
       refute ModelHelpers.adaptive_thinking_required?(model)
